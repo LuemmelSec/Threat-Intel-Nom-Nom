@@ -6,6 +6,9 @@ import json
 from typing import Optional, Dict, Any, List
 from bs4 import BeautifulSoup
 from app.config import settings
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class FeedFetcher:
