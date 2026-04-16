@@ -52,6 +52,7 @@ function Feeds() {
   });
 
   useEffect(() => {
+    fetchFeeds();
     fetchTemplates();
   }, []);
 
@@ -71,8 +72,7 @@ function Feeds() {
       const response = await templatesApi.getAll();
       setTemplates(response.data.filter(t => t.enabled));
     } catch (error) {
-      console.error('Error fetching templates:', errorrror fetching feeds:', error);
-      setLoading(false);
+      console.error('Error fetching templates:', error);
     }
   };
 
