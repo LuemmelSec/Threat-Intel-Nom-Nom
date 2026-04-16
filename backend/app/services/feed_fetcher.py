@@ -97,8 +97,14 @@ class RSSFetcher(FeedFetcher):
                 response = await client.get(url)
                 response.raise_for_status()
                 
+                logger.debug(f"RSS response for {url}: status={response.status_code}, length={len(response.text)}")
+                
                 # Parse RSS feed
                 feed = feedparser.parse(response.text)
+                
+                logger.debug(f"Feedparser result for {url}: entries={len(feed.entries)}, bozo={feed.bozo}")
+                if feed.bozo and hasattr(feed, 'bozo_exception'):
+                    logger.warning(f"Feedparser warning for {url}: {feed.bozo_exception}")
                 
                 # Combine all entry titles and descriptions
                 content_parts = []
