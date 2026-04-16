@@ -92,11 +92,13 @@ class AlertService:
         db: Session,
         feed: Feed,
         content: str,
-        keywords: List[Keyword]
+        keywords: List[Keyword],
+        api_metadata: List[Dict[str, Any]] = None
     ) -> List[Alert]:
         """
         Create alerts for matched keywords and queue notifications
         Only creates ONE alert per keyword per feed check (deduplicates multiple occurrences)
+        api_metadata: Optional list of metadata dicts (one per content item from API feeds)
         """
         matches = KeywordMatcher.find_matches(content, keywords)
         created_alerts = []
@@ -122,12 +124,27 @@ class AlertService:
             if existing_alert:
                 continue  # Skip creating duplicate alert
             
+            # Find matching metadata for this alert (if from API feed)
+            alert_metadata = {}
+            if api_metadata:
+                # Try to match the alert content to the source item
+                matched_text = match["matched_text"]
+                for item_meta in api_metadata:
+                    # Check if any metadata values contain the matched text
+                    for value in item_meta.values():
+                        if matched_text.lower() in str(value).lower():
+                            alert_metadata = item_meta
+                            break
+                    if alert_metadata:
+                        break
+            
             # Create alert with criticality from keyword
             alert = Alert(
                 feed_id=feed.id,
                 keyword_id=match["keyword"].id,
                 matched_content=match["matched_text"],
                 context=match["context"],
+                metadata=alert_metadata,
                 criticality=match["keyword"].criticality,
                 triggered_at=datetime.utcnow(),
                 read=False

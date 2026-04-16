@@ -110,6 +110,7 @@ def check_feed(feed_id: int):
         if result["success"]:
             content = result.get("content", "")
             content_hash = result.get("hash", "")
+            api_metadata = result.get("api_metadata", None)  # Get API metadata if present
             
             # Get all enabled keywords
             from app.models.models import Keyword
@@ -125,7 +126,7 @@ def check_feed(feed_id: int):
                 
                 if all_keywords:
                     logger.info(f"Checking {len(all_keywords)} keywords for feed {feed.name}")
-                    alerts = AlertService.create_alerts(db, feed, content, all_keywords)
+                    alerts = AlertService.create_alerts(db, feed, content, all_keywords, api_metadata)
                     
                     if alerts:
                         logger.info(f"Created {len(alerts)} alerts for feed {feed.name}")
@@ -136,7 +137,7 @@ def check_feed(feed_id: int):
                     
                     if new_keywords:
                         logger.info(f"Feed {feed.name} content unchanged, but checking {len(new_keywords)} new keywords")
-                        alerts = AlertService.create_alerts(db, feed, content, new_keywords)
+                        alerts = AlertService.create_alerts(db, feed, content, new_keywords, api_metadata)
                         
                         if alerts:
                             logger.info(f"Created {len(alerts)} alerts from new keywords for feed {feed.name}")
