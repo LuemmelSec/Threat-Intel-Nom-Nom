@@ -30,6 +30,7 @@ const FEED_TYPES = [
   { value: 'website', label: 'Website' },
   { value: 'onion', label: 'Onion Site' },
   { value: 'rss', label: 'RSS Feed' },
+  { value: 'api', label: 'API Feed' },
 ];
 
 function Feeds() {

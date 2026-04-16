@@ -54,4 +54,14 @@ export const statsApi = {
   get: () => api.get('/stats/'),
 };
 
+// API Templates API
+export const templatesApi = {
+  getAll: (params = {}) => api.get('/templates/', { params }),
+  getById: (id) => api.get(`/templates/${id}`),
+  create: (data) => api.post('/templates/', data),
+  update: (id, data) => api.put(`/templates/${id}`, data),
+  delete: (id) => api.delete(`/templates/${id}`),
+  test: (id) => api.post(`/templates/${id}/test`),
+};
+
 export default api;
