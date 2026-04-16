@@ -374,6 +374,16 @@ function Feeds() {
           >
             {FEED_TYPES.map((option) => (
               <MenuItem key={option.value} value={option.value}>
+                {option.label}
+              </MenuItem>
+            ))}
+          </TextField>
+          <TextField
+            fullWidth
+            margin="normal"
+            label="URL"
+            value={formData.url}
+            onChange={(e) => setFormData({ ...formData, url: e.target.value })}
             helperText={formData.feed_type === 'api' ? 'Leave empty - URL comes from template' : ''}
             disabled={formData.feed_type === 'api'}
           />
@@ -400,17 +410,7 @@ function Feeds() {
                 </MenuItem>
               ))}
             </TextField>
-          )}    {option.label}
-              </MenuItem>
-            ))}
-          </TextField>
-          <TextField
-            fullWidth
-            margin="normal"
-            label="URL"
-            value={formData.url}
-            onChange={(e) => setFormData({ ...formData, url: e.target.value })}
-          />
+          )}
           <TextField
             fullWidth
             margin="normal"
