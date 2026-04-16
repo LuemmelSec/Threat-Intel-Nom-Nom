@@ -3,6 +3,9 @@ from typing import List, Dict, Any
 from sqlalchemy.orm import Session
 from app.models.models import Feed, Keyword, Alert, Notification, NotificationConfig, AlertType
 from datetime import datetime
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class KeywordMatcher:
@@ -15,6 +18,8 @@ class KeywordMatcher:
         Returns list of matches with context
         """
         matches = []
+        
+        logger.debug(f"Searching for {len(keywords)} keywords in content (length: {len(content)})")
         
         for keyword in keywords:
             if not keyword.enabled:
@@ -100,6 +105,8 @@ class AlertService:
         Only creates ONE alert per keyword per feed check (deduplicates multiple occurrences)
         api_metadata: Optional list of metadata dicts (one per content item from API feeds)
         """
+        
+        logger.info(f"Found {len(matches)} keyword matches for feed {feed.name}")
         matches = KeywordMatcher.find_matches(content, keywords)
         created_alerts = []
         
