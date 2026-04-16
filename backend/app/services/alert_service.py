@@ -144,7 +144,7 @@ class AlertService:
                 keyword_id=match["keyword"].id,
                 matched_content=match["matched_text"],
                 context=match["context"],
-                metadata=alert_metadata,
+                api_metadata=alert_metadata,
                 criticality=match["keyword"].criticality,
                 triggered_at=datetime.utcnow(),
                 read=False

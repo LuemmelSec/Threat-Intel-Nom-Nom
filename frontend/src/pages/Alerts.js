@@ -390,13 +390,13 @@ function Alerts() {
                 </Typography>
               </Paper>
 
-              {selectedAlert.metadata && Object.keys(selectedAlert.metadata).length > 0 && (
+              {selectedAlert.api_metadata && Object.keys(selectedAlert.api_metadata).length > 0 && (
                 <Paper sx={{ p: 2, mb: 2, backgroundColor: 'info.dark' }}>
                   <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                     Threat Intelligence Data
                   </Typography>
                   <Box sx={{ mt: 1 }}>
-                    {Object.entries(selectedAlert.metadata).map(([key, value]) => (
+                    {Object.entries(selectedAlert.api_metadata).map(([key, value]) => (
                       <Box key={key} sx={{ display: 'flex', mb: 0.5 }}>
                         <Typography variant="body2" sx={{ fontWeight: 'bold', textTransform: 'capitalize', mr: 1 }}>
                           {key.replace(/_/g, ' ')}:
