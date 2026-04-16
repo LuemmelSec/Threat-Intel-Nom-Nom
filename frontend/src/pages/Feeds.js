@@ -24,7 +24,7 @@ import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import ToggleOnIcon from '@mui/icons-material/ToggleOn';
 import ToggleOffIcon from '@mui/icons-material/ToggleOff';
 import { DataGrid } from '@mui/x-data-grid';
-import { feedsApi } from '../api/client';
+import { feedsApi, templatesApi } from '../api/client';
 
 const FEED_TYPES = [
   { value: 'website', label: 'Website' },
@@ -35,6 +35,7 @@ const FEED_TYPES = [
 
 function Feeds() {
   const [feeds, setFeeds] = useState([]);
+  const [templates, setTemplates] = useState([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingFeed, setEditingFeed] = useState(null);
@@ -51,7 +52,7 @@ function Feeds() {
   });
 
   useEffect(() => {
-    fetchFeeds();
+    fetchTemplates();
   }, []);
 
   const fetchFeeds = async () => {
@@ -61,6 +62,16 @@ function Feeds() {
       setLoading(false);
     } catch (error) {
       console.error('Error fetching feeds:', error);
+      setLoading(false);
+    }
+  };
+
+  const fetchTemplates = async () => {
+    try {
+      const response = await templatesApi.getAll();
+      setTemplates(response.data.filter(t => t.enabled));
+    } catch (error) {
+      console.error('Error fetching templates:', errorrror fetching feeds:', error);
       setLoading(false);
     }
   };
@@ -363,7 +374,33 @@ function Feeds() {
           >
             {FEED_TYPES.map((option) => (
               <MenuItem key={option.value} value={option.value}>
-                {option.label}
+            helperText={formData.feed_type === 'api' ? 'Leave empty - URL comes from template' : ''}
+            disabled={formData.feed_type === 'api'}
+          />
+          {formData.feed_type === 'api' && (
+            <TextField
+              fullWidth
+              margin="normal"
+              select
+              label="API Template"
+              value={formData.feed_metadata?.template_id || ''}
+              onChange={(e) => {
+                const template = templates.find(t => t.id === parseInt(e.target.value));
+                setFormData({ 
+                  ...formData, 
+                  url: template?.configuration?.endpoint || '',
+                  feed_metadata: { ...formData.feed_metadata, template_id: parseInt(e.target.value) }
+                });
+              }}
+              helperText="Select the API integration template to use"
+            >
+              {templates.map((template) => (
+                <MenuItem key={template.id} value={template.id}>
+                  {template.name} - {template.description}
+                </MenuItem>
+              ))}
+            </TextField>
+          )}    {option.label}
               </MenuItem>
             ))}
           </TextField>

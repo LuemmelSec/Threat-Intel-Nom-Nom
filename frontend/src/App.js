@@ -13,6 +13,7 @@ import Alerts from './pages/Alerts';
 import Notifications from './pages/Notifications';
 import Logs from './pages/Logs';
 import Settings from './pages/Settings';
+import APITemplates from './pages/APITemplates';
 
 // Create dark theme
 const darkTheme = createTheme({
@@ -48,6 +49,7 @@ function App() {
               <Route path="/keywords" element={<Keywords />} />
               <Route path="/alerts" element={<Alerts />} />
               <Route path="/notifications" element={<Notifications />} />
+              <Route path="/api-templates" element={<APITemplates />} />
               <Route path="/logs" element={<Logs />} />
               <Route path="/settings" element={<Settings />} />
             </Routes>

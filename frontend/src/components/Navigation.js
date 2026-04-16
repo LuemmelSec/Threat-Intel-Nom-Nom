@@ -18,6 +18,7 @@ import WarningIcon from '@mui/icons-material/Warning';
 import ShieldIcon from '@mui/icons-material/Shield';
 import SettingsIcon from '@mui/icons-material/Settings';
 import AssessmentIcon from '@mui/icons-material/Assessment';
+import ApiIcon from '@mui/icons-material/Api';
 
 const drawerWidth = 240;
 
@@ -27,6 +28,7 @@ const menuItems = [
   { text: 'Keywords', icon: <LabelIcon />, path: '/keywords' },
   { text: 'Alerts', icon: <WarningIcon />, path: '/alerts' },
   { text: 'Notifications', icon: <NotificationsIcon />, path: '/notifications' },
+  { text: 'API Templates', icon: <ApiIcon />, path: '/api-templates' },
   { text: 'Logs', icon: <AssessmentIcon />, path: '/logs' },
   { text: 'Settings', icon: <SettingsIcon />, path: '/settings' },
 ];
