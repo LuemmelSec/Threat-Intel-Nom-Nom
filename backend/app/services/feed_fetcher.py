@@ -106,6 +106,8 @@ class RSSFetcher(FeedFetcher):
                 
                 content = ' '.join(content_parts)
                 
+                logger.info(f"RSS feed {url}: Extracted {len(feed.entries)} entries, content length: {len(content)} chars")
+                
                 return {
                     "success": True,
                     "content": content,
