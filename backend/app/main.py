@@ -64,12 +64,10 @@ async def startup_event():
     """Run on application startup"""
     logger.info("Starting Dark Web Alert API...")
     logger.info("Database tables created/verified")
-    data
     db = SessionLocal()
     try:
         initialize_default_feeds(db)
-        initialize_default_template
-        initialize_default_feeds(db)
+        initialize_default_templates(db)
     finally:
         db.close()
 
