@@ -78,12 +78,27 @@ def check_feed(feed_id: int):
         if not feed or not feed.enabled:
             return
         
+        # For API feeds, load template configuration
+        metadata = feed.feed_metadata or {}
+        if feed.feed_type.value == "api" and metadata.get('template_id'):
+            from app.models.models import APITemplate
+            template = db.query(APITemplate).filter(
+                APITemplate.id == metadata['template_id'],
+                APITemplate.enabled == True
+            ).first()
+            if template:
+                # Merge template configuration into metadata
+                metadata = {**metadata, 'configuration': template.configuration}
+            else:
+                logger.error(f"API template {metadata['template_id']} not found or disabled for feed {feed.name}")
+                return
+        
         # Fetch feed content
         result = asyncio.run(
             fetch_feed_content(
                 feed.feed_type.value,
                 feed.url,
-                feed.feed_metadata
+                metadata
             )
         )
         
