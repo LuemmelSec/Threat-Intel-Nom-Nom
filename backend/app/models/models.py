@@ -9,7 +9,7 @@ class FeedType(str, enum.Enum):
     WEBSITE = "website"
     ONION = "onion"
     RSS = "rss"
-    TELEGRAM = "telegram"
+    API = "api"
 
 
 class AlertType(str, enum.Enum):
@@ -117,3 +117,16 @@ class NotificationConfig(Base):
     destination = Column(Text, nullable=False)
     enabled = Column(Boolean, default=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
+class APITemplate(Base):
+    __tablename__ = "api_templates"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(200), nullable=False, unique=True, index=True)
+    description = Column(Text, nullable=True)
+    configuration = Column(JSON, nullable=False)  # Full API configuration as JSON
+    is_system = Column(Boolean, default=False)  # System templates can't be deleted
+    enabled = Column(Boolean, default=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())

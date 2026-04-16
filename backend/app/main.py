@@ -2,8 +2,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
 from app.database import engine, Base, SessionLocal
-from app.api import feeds, keywords, alerts, notifications, stats, logs
-from app.utils.init_data import initialize_default_feeds
+from app.api import feeds, keywords, alerts, notifications, stats, logs, templates
+from app.utils.init_data import initialize_default_feeds, initialize_default_templates
 import logging
 
 # Configure logging
@@ -40,6 +40,7 @@ app.include_router(alerts.router, prefix="/api")
 app.include_router(notifications.router, prefix="/api")
 app.include_router(stats.router, prefix="/api")
 app.include_router(logs.router, prefix="/api/logs", tags=["logs"])
+app.include_router(templates.router)
 
 
 @app.get("/")
@@ -63,10 +64,11 @@ async def startup_event():
     """Run on application startup"""
     logger.info("Starting Dark Web Alert API...")
     logger.info("Database tables created/verified")
-    
-    # Initialize default feeds
+    data
     db = SessionLocal()
     try:
+        initialize_default_feeds(db)
+        initialize_default_template
         initialize_default_feeds(db)
     finally:
         db.close()

@@ -142,6 +142,44 @@ class StatisticsResponse(BaseModel):
     alerts_last_24h: int
 
 
+# API Template Schemas
+class APITemplateBase(BaseModel):
+    name: str
+    description: Optional[str] = None
+    configuration: Dict[str, Any]
+    enabled: bool = True
+
+
+class APITemplateCreate(APITemplateBase):
+    is_system: bool = False
+
+
+class APITemplateUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    configuration: Optional[Dict[str, Any]] = None
+    enabled: Optional[bool] = None
+
+
+class APITemplateResponse(APITemplateBase):
+    id: int
+    is_system: bool
+    created_at: datetime
+    updated_at: Optional[datetime]
+    
+    class Config:
+        from_attributes = True
+
+
+class APITemplateTestResponse(BaseModel):
+    success: bool
+    status_code: Optional[int] = None
+    records_found: Optional[int] = None
+    sample_data: Optional[List[Dict[str, Any]]] = None
+    mapped_fields: Optional[Dict[str, Any]] = None
+    error: Optional[str] = None
+
+
 # Update forward references
 FeedResponse.model_rebuild()
 AlertResponse.model_rebuild()
