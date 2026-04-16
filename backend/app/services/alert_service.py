@@ -105,10 +105,10 @@ class AlertService:
         Only creates ONE alert per keyword per feed check (deduplicates multiple occurrences)
         api_metadata: Optional list of metadata dicts (one per content item from API feeds)
         """
-        
-        logger.info(f"Found {len(matches)} keyword matches for feed {feed.name}")
         matches = KeywordMatcher.find_matches(content, keywords)
         created_alerts = []
+        
+        logger.info(f"Found {len(matches)} keyword matches for feed {feed.name}")
         
         # Deduplicate: only create ONE alert per keyword (take first match)
         keyword_matches = {}
