@@ -1,0 +1,147 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: darkweb_postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-darkweb}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-darkweb_password}
+      POSTGRES_DB: ${POSTGRES_DB:-darkweb_db}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-darkweb}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - darkweb_network
+
+  redis:
+    image: redis:7-alpine
+    container_name: darkweb_redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - darkweb_network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: darkweb_backend
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-darkweb}:${POSTGRES_PASSWORD:-darkweb_password}@postgres:5432/${POSTGRES_DB:-darkweb_db}
+      REDIS_URL: redis://redis:6379/0
+      SECRET_KEY: ${SECRET_KEY:-your-secret-key-change-this}
+      SMTP_HOST: ${SMTP_HOST:-smtp.gmail.com}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_FROM: ${SMTP_FROM:-alerts@darkweb.local}
+      TOR_PROXY: ${TOR_PROXY:-socks5://tor:9050}
+    volumes:
+      - ./backend:/app
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      tor:
+        condition: service_started
+    networks:
+      - darkweb_network
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  celery_worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: darkweb_celery
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-darkweb}:${POSTGRES_PASSWORD:-darkweb_password}@postgres:5432/${POSTGRES_DB:-darkweb_db}
+      REDIS_URL: redis://redis:6379/0
+      SECRET_KEY: ${SECRET_KEY:-your-secret-key-change-this}
+      SMTP_HOST: ${SMTP_HOST:-smtp.gmail.com}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_FROM: ${SMTP_FROM:-alerts@darkweb.local}
+      TOR_PROXY: ${TOR_PROXY:-socks5://tor:9050}
+    volumes:
+      - ./backend:/app
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      tor:
+        condition: service_started
+    networks:
+      - darkweb_network
+    command: celery -A app.tasks.celery_app worker --loglevel=info
+
+  celery_beat:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: darkweb_celery_beat
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-darkweb}:${POSTGRES_PASSWORD:-darkweb_password}@postgres:5432/${POSTGRES_DB:-darkweb_db}
+      REDIS_URL: redis://redis:6379/0
+      SECRET_KEY: ${SECRET_KEY:-your-secret-key-change-this}
+      TOR_PROXY: ${TOR_PROXY:-socks5://tor:9050}
+    volumes:
+      - ./backend:/app
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - darkweb_network
+    command: celery -A app.tasks.celery_app beat --loglevel=info
+
+  tor:
+    image: osminogin/tor-simple:latest
+    container_name: darkweb_tor
+    ports:
+      - "9050:9050"
+    networks:
+      - darkweb_network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: darkweb_frontend
+    environment:
+      REACT_APP_API_URL: ${REACT_APP_API_URL:-http://localhost:8000}
+    volumes:
+      - ./frontend/src:/app/src
+      - ./frontend/public:/app/public
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    networks:
+      - darkweb_network
+    stdin_open: true
+    tty: true
+
+volumes:
+  postgres_data:
+
+networks:
+  darkweb_network:
+    driver: bridge

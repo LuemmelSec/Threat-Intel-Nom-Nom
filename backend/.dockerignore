@@ -1,0 +1,56 @@
+# Git
+.git
+.gitignore
+
+# Python
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+*.egg
+*.egg-info
+dist
+build
+*.log
+
+# Node
+node_modules
+npm-debug.log
+yarn-error.log
+.npm
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# Environment
+.env
+.env.local
+
+# Docker
+.dockerignore
+Dockerfile
+docker-compose.yml
+
+# Documentation
+README.md
+EXAMPLES.md
+*.md
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Testing
+.coverage
+htmlcov
+.pytest_cache
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
