@@ -16,7 +16,7 @@ import LabelIcon from '@mui/icons-material/Label';
 import LocalOfferIcon from '@mui/icons-material/LocalOffer';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import WarningIcon from '@mui/icons-material/Warning';
-import ShieldIcon from '@mui/icons-material/Shield';
+import CookieIcon from '@mui/icons-material/Cookie';
 import SettingsIcon from '@mui/icons-material/Settings';
 import AssessmentIcon from '@mui/icons-material/Assessment';
 import ApiIcon from '@mui/icons-material/Api';
@@ -42,7 +42,7 @@ function Navigation() {
     <>
       <AppBar position="fixed" sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}>
         <Toolbar>
-          <ShieldIcon sx={{ mr: 2 }} />
+          <CookieIcon sx={{ mr: 2 }} />
           <Typography variant="h6" noWrap component="div">
             Threat Intel Nom Nom
           </Typography>
