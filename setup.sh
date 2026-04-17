@@ -83,7 +83,7 @@ if [ ! -f ".env" ]; then
         
         # Update backend CORS config
         CONFIG_PATH="backend/app/config.py"
-        sed -i.bak "s|CORS_ORIGINS: list = \[\"http://localhost:3000\"\]|CORS_ORIGINS: list = [\"http://localhost:3000\", \"http://${LOCAL_IP}:3000\"]|" "$CONFIG_PATH"
+        sed -i.bak "s|CORS_ORIGINS: list = \[\"http://localhost:3000\", \"http://frontend:3000\"\]|CORS_ORIGINS: list = [\"http://localhost:3000\", \"http://frontend:3000\", \"http://${LOCAL_IP}:3000\"]|" "$CONFIG_PATH"
         rm -f "${CONFIG_PATH}.bak"
         
         echo "✓ Configured for remote access"

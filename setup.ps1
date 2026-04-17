@@ -68,7 +68,7 @@ if (-Not (Test-Path ".env")) {
         # Update backend CORS config
         $configPath = "backend/app/config.py"
         $configContent = Get-Content $configPath -Raw
-        $configContent = $configContent -replace 'CORS_ORIGINS: list = \["http://localhost:3000"\]', "CORS_ORIGINS: list = [`"http://localhost:3000`", `"http://${localIP}:3000`"]"
+        $configContent = $configContent -replace 'CORS_ORIGINS: list = \["http://localhost:3000", "http://frontend:3000"\]', "CORS_ORIGINS: list = [`"http://localhost:3000`", `"http://frontend:3000`", `"http://${localIP}:3000`"]"
         $configContent | Set-Content $configPath
         
         Write-Host "✓ Configured for remote access" -ForegroundColor Green
