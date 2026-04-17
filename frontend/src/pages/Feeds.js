@@ -25,6 +25,11 @@ import ToggleOnIcon from '@mui/icons-material/ToggleOn';
 import ToggleOffIcon from '@mui/icons-material/ToggleOff';
 import { DataGrid } from '@mui/x-data-grid';
 import { feedsApi, templatesApi } from '../api/client';
+import TagDisplay from '../components/TagDisplay';
+import TagSelector from '../components/TagSelector';
+import axios from 'axios';
+
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://192.168.10.161:8000';
 
 const FEED_TYPES = [
   { value: 'website', label: 'Website' },
@@ -42,6 +47,7 @@ function Feeds() {
   const [filterText, setFilterText] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedRows, setSelectedRows] = useState([]);
+  const [selectedTags, setSelectedTags] = useState([]);
   const [formData, setFormData] = useState({
     name: '',
     feed_type: 'website',
@@ -87,6 +93,7 @@ function Feeds() {
         fetch_interval: feed.fetch_interval,
         feed_metadata: feed.feed_metadata || {},
       });
+      setSelectedTags(feed.tags || []);
     } else {
       setEditingFeed(null);
       setFormData({
@@ -97,6 +104,7 @@ function Feeds() {
         fetch_interval: 300,
         feed_metadata: {},
       });
+      setSelectedTags([]);
     }
     setDialogOpen(true);
   };
@@ -108,11 +116,22 @@ function Feeds() {
 
   const handleSubmit = async () => {
     try {
+      let feedId;
       if (editingFeed) {
         await feedsApi.update(editingFeed.id, formData);
+        feedId = editingFeed.id;
       } else {
-        await feedsApi.create(formData);
+        const response = await feedsApi.create(formData);
+        feedId = response.data.id;
       }
+      
+      // Assign tags
+      if (selectedTags.length > 0) {
+        await axios.post(`${API_BASE_URL}/api/tags/feeds/${feedId}/tags`, {
+          tag_ids: selectedTags.map(t => t.id)
+        });
+      }
+      
       fetchFeeds();
       handleCloseDialog();
     } catch (error) {
@@ -219,10 +238,10 @@ function Feeds() {
     },
     { field: 'fetch_interval', headerName: 'Interval (s)', width: 120 },
     {
-      field: 'keywords',
-      headerName: 'Keywords',
-      width: 150,
-      renderCell: (params) => <Chip label={params.value.length} size="small" />,
+      field: 'tags',
+      headerName: 'Tags',
+      width: 200,
+      renderCell: (params) => <TagDisplay tags={params.value} />,
     },
     {
       field: 'actions',
@@ -428,6 +447,12 @@ function Feeds() {
             }
             label="Enabled"
           />
+          <Box sx={{ mt: 2 }}>
+            <TagSelector
+              selectedTags={selectedTags}
+              onChange={setSelectedTags}
+            />
+          </Box>
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseDialog}>Cancel</Button>

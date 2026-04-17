@@ -22,6 +22,11 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import { DataGrid } from '@mui/x-data-grid';
 import { alertsApi } from '../api/client';
+import TagDisplay from '../components/TagDisplay';
+import TagSelector from '../components/TagSelector';
+import axios from 'axios';
+
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://192.168.10.161:8000';
 
 function Alerts() {
   const [searchParams] = useSearchParams();
@@ -29,6 +34,7 @@ function Alerts() {
   const [loading, setLoading] = useState(true);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [selectedAlert, setSelectedAlert] = useState(null);
+  const [selectedAlertTags, setSelectedAlertTags] = useState([]);
   const [filterText, setFilterText] = useState('');
   const [statusFilter, setStatusFilter] = useState(searchParams.get('status') || 'all');
   const [criticalityFilter, setCriticalityFilter] = useState(searchParams.get('criticality') || 'all');
@@ -98,8 +104,7 @@ function Alerts() {
   };
 
   const handleViewDetails = (alert) => {
-    setSelectedAlert(alert);
-    setDetailsOpen(true);
+    setSelectedAlert(alert);    setSelectedAlertTags(alert.tags || []);    setDetailsOpen(true);
   };
 
   const handleBulkDelete = async () => {
@@ -203,6 +208,12 @@ function Alerts() {
           />
         );
       },
+    },
+    {
+      field: 'tags',
+      headerName: 'Tags',
+      width: 200,
+      renderCell: (params) => <TagDisplay tags={params.value} />,
     },
     {
       field: 'actions',
@@ -428,6 +439,26 @@ function Alerts() {
                 <Typography variant="body1">
                   {new Date(selectedAlert.triggered_at).toLocaleString()}
                 </Typography>
+              </Paper>
+
+              <Paper sx={{ p: 2, mt: 2, backgroundColor: 'background.default' }}>
+                <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                  Tags
+                </Typography>
+                <TagSelector
+                  selectedTags={selectedAlertTags}
+                  onChange={async (newTags) => {
+                    setSelectedAlertTags(newTags);
+                    try {
+                      await axios.post(`${API_BASE_URL}/api/tags/alerts/${selectedAlert.id}/tags`, {
+                        tag_ids: newTags.map(t => t.id)
+                      });
+                      fetchAlerts();
+                    } catch (error) {
+                      console.error('Error updating alert tags:', error);
+                    }
+                  }}
+                />
               </Paper>
             </Box>
           )}

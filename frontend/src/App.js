@@ -15,7 +15,6 @@ import Logs from './pages/Logs';
 import Settings from './pages/Settings';
 import APITemplates from './pages/APITemplates';
 import Tags from './pages/Tags';
-import Tags from './pages/Tags';
 
 // Create dark theme
 const darkTheme = createTheme({

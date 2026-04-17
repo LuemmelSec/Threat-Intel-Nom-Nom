@@ -24,6 +24,11 @@ import ToggleOnIcon from '@mui/icons-material/ToggleOn';
 import ToggleOffIcon from '@mui/icons-material/ToggleOff';
 import { DataGrid } from '@mui/x-data-grid';
 import { keywordsApi } from '../api/client';
+import TagDisplay from '../components/TagDisplay';
+import TagSelector from '../components/TagSelector';
+import axios from 'axios';
+
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://192.168.10.161:8000';
 
 function Keywords() {
   const [keywords, setKeywords] = useState([]);
@@ -33,6 +38,7 @@ function Keywords() {
   const [filterText, setFilterText] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedRows, setSelectedRows] = useState([]);
+  const [selectedTags, setSelectedTags] = useState([]);
   const [formData, setFormData] = useState({
     keyword: '',
     case_sensitive: false,
@@ -66,6 +72,7 @@ function Keywords() {
         enabled: keyword.enabled,
         criticality: keyword.criticality || 'medium',
       });
+      setSelectedTags(keyword.tags || []);
     } else {
       setEditingKeyword(null);
       setFormData({
@@ -75,6 +82,7 @@ function Keywords() {
         enabled: true,
         criticality: 'medium',
       });
+      setSelectedTags([]);
     }
     setDialogOpen(true);
   };
@@ -86,11 +94,22 @@ function Keywords() {
 
   const handleSubmit = async () => {
     try {
+      let keywordId;
       if (editingKeyword) {
         await keywordsApi.update(editingKeyword.id, formData);
+        keywordId = editingKeyword.id;
       } else {
-        await keywordsApi.create(formData);
+        const response = await keywordsApi.create(formData);
+        keywordId = response.data.id;
       }
+      
+      // Assign tags
+      if (selectedTags.length > 0) {
+        await axios.post(`${API_BASE_URL}/api/tags/keywords/${keywordId}/tags`, {
+          tag_ids: selectedTags.map(t => t.id)
+        });
+      }
+      
       fetchKeywords();
       handleCloseDialog();
     } catch (error) {
@@ -242,6 +261,12 @@ function Keywords() {
           />
         );
       },
+    },
+    {
+      field: 'tags',
+      headerName: 'Tags',
+      width: 200,
+      renderCell: (params) => <TagDisplay tags={params.value} />,
     },
     {
       field: 'actions',
@@ -447,6 +472,12 @@ function Keywords() {
             }
             label="Enabled"
           />
+          <Box sx={{ mt: 2 }}>
+            <TagSelector
+              selectedTags={selectedTags}
+              onChange={setSelectedTags}
+            />
+          </Box>
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseDialog}>Cancel</Button>
