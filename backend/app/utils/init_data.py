@@ -1,7 +1,7 @@
 """Initialize database with default data"""
 import logging
 from sqlalchemy.orm import Session
-from app.models.models import Feed, APITemplate, Tag
+from app.models.models import Feed, APITemplate, Tag, FeedType
 
 logger = logging.getLogger(__name__)
 
@@ -197,24 +197,73 @@ def initialize_default_feeds(db: Session) -> None:
         
         # Add missing default feeds
         added = 0
+        new_feeds = []
         for feed_data in DEFAULT_FEEDS:
             if feed_data["url"] in existing_urls:
                 continue
             
             feed = Feed(**feed_data)
             db.add(feed)
+            new_feeds.append(feed)
             added += 1
             logger.info(f"Added default feed: {feed_data['name']}")
         
         if added > 0:
             db.commit()
             logger.info(f"✅ Initialized {added} default cybersecurity feeds")
+            
+            # Assign tags to feeds
+            assign_default_tags(db)
         else:
             logger.info(f"All default feeds already exist ({len(existing_urls)} total)")
+            # Still assign tags in case they were missing
+            assign_default_tags(db)
         
     except Exception as e:
         db.rollback()
         logger.error(f"Failed to initialize default feeds: {e}")
+
+
+def assign_default_tags(db: Session) -> None:
+    """
+    Assign default tags to feeds based on their type and URL.
+    Called automatically after feed initialization.
+    """
+    try:
+        # Get tags
+        x_tag = db.query(Tag).filter(Tag.name == "X").first()
+        ransomware_tag = db.query(Tag).filter(Tag.name == "Ransomware Gang").first()
+        
+        if not x_tag or not ransomware_tag:
+            logger.warning("Tags not found for assignment")
+            return
+        
+        # Get all feeds
+        feeds = db.query(Feed).all()
+        
+        assigned = 0
+        for feed in feeds:
+            tags_to_add = []
+            
+            # Assign X tag to nitter.net feeds
+            if "nitter.net" in feed.url and x_tag not in feed.tags:
+                tags_to_add.append(x_tag)
+            
+            # Assign Ransomware Gang tag to onion feeds
+            if feed.feed_type == FeedType.ONION and ransomware_tag not in feed.tags:
+                tags_to_add.append(ransomware_tag)
+            
+            if tags_to_add:
+                feed.tags.extend(tags_to_add)
+                assigned += len(tags_to_add)
+        
+        if assigned > 0:
+            db.commit()
+            logger.info(f"✅ Assigned {assigned} default tag relationships")
+        
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Failed to assign default tags: {e}")
 
 
 DEFAULT_API_TEMPLATES = [

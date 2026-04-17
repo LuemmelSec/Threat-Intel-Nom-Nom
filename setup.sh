@@ -1,7 +1,7 @@
 #!/bin/bash
 
-echo "🔍 Dark Web Alert - Setup Script"
-echo "================================="
+echo "🔍 Threat Intel Nom Nom - Setup Script"
+echo "========================================"
 echo ""
 
 # Check if Docker is installed
@@ -27,12 +27,73 @@ fi
 
 echo ""
 
+# Detect IP address
+if command -v hostname &> /dev/null; then
+    LOCAL_IP=$(hostname -I | awk '{print $1}')
+    if [ -z "$LOCAL_IP" ]; then
+        # Fallback for macOS
+        LOCAL_IP=$(ifconfig | grep "inet " | grep -v 127.0.0.1 | head -n 1 | awk '{print $2}')
+    fi
+else
+    LOCAL_IP="localhost"
+fi
+
+if [ -n "$LOCAL_IP" ] && [ "$LOCAL_IP" != "localhost" ]; then
+    echo "Detected IP address: $LOCAL_IP"
+else
+    LOCAL_IP="localhost"
+    echo "Could not detect IP, using localhost"
+fi
+
 # Create .env file if it doesn't exist
 if [ ! -f ".env" ]; then
     echo "Creating .env file from template..."
     cp .env.example .env
-    echo "✓ .env file created. Please edit it with your configuration."
-    echo "  Important: Update POSTGRES_PASSWORD and SECRET_KEY!"
+    
+    # Generate secure credentials
+    echo "Generating secure credentials..."
+    
+    # Generate random password and secret key (using openssl or /dev/urandom)
+    if command -v openssl &> /dev/null; then
+        DB_PASSWORD=$(openssl rand -base64 24 | tr -d "=+/" | cut -c1-24)
+        SECRET_KEY=$(openssl rand -hex 32)
+    else
+        DB_PASSWORD=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 24 | head -n 1)
+        SECRET_KEY=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 64 | head -n 1)
+    fi
+    
+    # Update .env with generated credentials
+    sed -i.bak "s/POSTGRES_PASSWORD=darkweb_password_change_me/POSTGRES_PASSWORD=$DB_PASSWORD/" .env
+    sed -i.bak "s/your-super-secret-key-change-this-in-production/$SECRET_KEY/" .env
+    sed -i.bak "s/darkweb:darkweb_password_change_me@/darkweb:$DB_PASSWORD@/" .env
+    rm -f .env.bak
+    
+    # Ask about remote access
+    echo ""
+    read -p "Enable remote access from other machines? (y/n) [n] " -n 1 -r
+    echo ""
+    
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        API_URL="http://${LOCAL_IP}:8000"
+        echo "Configuring for remote access at $LOCAL_IP..."
+        
+        # Update .env with IP address
+        sed -i.bak "s|REACT_APP_API_URL=http://localhost:8000|REACT_APP_API_URL=$API_URL|" .env
+        rm -f .env.bak
+        
+        # Update backend CORS config
+        CONFIG_PATH="backend/app/config.py"
+        sed -i.bak "s|CORS_ORIGINS: list = \[\"http://localhost:3000\"\]|CORS_ORIGINS: list = [\"http://localhost:3000\", \"http://${LOCAL_IP}:3000\"]|" "$CONFIG_PATH"
+        rm -f "${CONFIG_PATH}.bak"
+        
+        echo "✓ Configured for remote access"
+        echo "  Access from: http://${LOCAL_IP}:3000"
+    else
+        echo "✓ Configured for local access only"
+    fi
+    
+    echo ""
+    echo "✓ .env file created with secure credentials"
 else
     echo "✓ .env file already exists"
 fi
@@ -53,12 +114,20 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
     
     if [ $? -eq 0 ]; then
         echo ""
-        echo "✓ Dark Web Alert is now running!"
+        echo "✓ Threat Intel Nom Nom is now running!"
         echo ""
         echo "Access the application at:"
-        echo "  Frontend:  http://localhost:3000"
-        echo "  Backend:   http://localhost:8000"
-        echo "  API Docs:  http://localhost:8000/docs"
+        if [ -n "$LOCAL_IP" ] && [ "$LOCAL_IP" != "localhost" ] && [[ $REPLY =~ ^[Yy]$ ]]; then
+            echo "  Frontend:  http://${LOCAL_IP}:3000"
+            echo "  Backend:   http://${LOCAL_IP}:8000"
+            echo "  API Docs:  http://${LOCAL_IP}:8000/docs"
+        else
+            echo "  Frontend:  http://localhost:3000"
+            echo "  Backend:   http://localhost:8000"
+            echo "  API Docs:  http://localhost:8000/docs"
+        fi
+        echo ""
+        echo "Default feeds and tags have been automatically configured."
         echo ""
         echo "View logs with: docker compose logs -f"
         echo "Stop services with: docker compose down"

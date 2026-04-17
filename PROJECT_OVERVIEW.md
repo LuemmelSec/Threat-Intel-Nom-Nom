@@ -353,7 +353,7 @@ docker compose up -d --build
 1. Generate secure SECRET_KEY: `openssl rand -hex 32`
 2. Set strong POSTGRES_PASSWORD (16+ characters)
 3. Configure CORS_ORIGINS with production domain
-4. Set REACT_APP_API_BASE_URL to production API URL
+4. Set REACT_APP_API_URL to production API URL
 5. Build frontend with production optimizations
 6. Deploy with `docker compose -f docker-compose.prod.yml up -d`
 7. Configure reverse proxy with SSL
@@ -372,7 +372,7 @@ CORS_ORIGINS: list = ["http://YOUR_SERVER_IP:3000"]
 **Frontend API URL:**
 Edit `.env`:
 ```env
-REACT_APP_API_BASE_URL=http://YOUR_SERVER_IP:8000
+REACT_APP_API_URL=http://YOUR_SERVER_IP:8000
 ```
 
 **Rebuild:**

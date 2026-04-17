@@ -64,4 +64,13 @@ export const templatesApi = {
   test: (id) => api.post(`/templates/${id}/test`),
 };
 
+// Tags API
+export const tagsApi = {
+  getAll: (params = {}) => api.get('/tags/', { params }),
+  getById: (id) => api.get(`/tags/${id}`),
+  create: (data) => api.post('/tags/', data),
+  update: (id, data) => api.put(`/tags/${id}`, data),
+  delete: (id) => api.delete(`/tags/${id}`),
+};
+
 export default api;

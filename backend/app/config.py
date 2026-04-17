@@ -25,7 +25,7 @@ class Settings(BaseSettings):
     TOR_PROXY: str = "socks5://tor:9050"
     
     # CORS
-    CORS_ORIGINS: list = ["http://localhost:3000", "http://frontend:3000", "http://192.168.10.161:3000"]
+    CORS_ORIGINS: list = ["http://localhost:3000", "http://frontend:3000"]
     
     class Config:
         env_file = ".env"

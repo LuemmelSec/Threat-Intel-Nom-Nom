@@ -1,7 +1,7 @@
 #!/usr/bin/env pwsh
 
-Write-Host "🔍 Dark Web Alert - Setup Script" -ForegroundColor Cyan
-Write-Host "=================================" -ForegroundColor Cyan
+Write-Host "🔍 Threat Intel Nom Nom - Setup Script" -ForegroundColor Cyan
+Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
 
 # Check if Docker is installed
@@ -27,12 +27,58 @@ try {
 
 Write-Host ""
 
+# Detect IP address
+$localIP = (Get-NetIPAddress -AddressFamily IPv4 | Where-Object { $_.InterfaceAlias -notlike "*Loopback*" -and $_.IPAddress -notlike "169.254.*" } | Select-Object -First 1).IPAddress
+
+if ($localIP) {
+    Write-Host "Detected IP address: $localIP" -ForegroundColor Cyan
+} else {
+    $localIP = "localhost"
+    Write-Host "Could not detect IP, using localhost" -ForegroundColor Yellow
+}
+
 # Create .env file if it doesn't exist
 if (-Not (Test-Path ".env")) {
     Write-Host "Creating .env file from template..." -ForegroundColor Yellow
     Copy-Item ".env.example" ".env"
-    Write-Host "✓ .env file created. Please edit it with your configuration." -ForegroundColor Green
-    Write-Host "  Important: Update POSTGRES_PASSWORD and SECRET_KEY!" -ForegroundColor Yellow
+    
+    # Generate secure credentials
+    Write-Host "Generating secure credentials..." -ForegroundColor Yellow
+    
+    # Generate random password and secret key
+    $dbPassword = -join ((65..90) + (97..122) + (48..57) | Get-Random -Count 24 | ForEach-Object {[char]$_})
+    $secretKey = -join ((65..90) + (97..122) + (48..57) | Get-Random -Count 32 | ForEach-Object {[char]$_})
+    
+    # Update .env with generated credentials
+    (Get-Content ".env") -replace 'POSTGRES_PASSWORD=darkweb_password_change_me', "POSTGRES_PASSWORD=$dbPassword" `
+                          -replace 'your-super-secret-key-change-this-in-production', $secretKey `
+                          -replace 'darkweb:darkweb_password_change_me@', "darkweb:$dbPassword@" | Set-Content ".env"
+    
+    # Ask about remote access
+    Write-Host ""
+    $remote = Read-Host "Enable remote access from other machines? (y/n) [n]"
+    
+    if ($remote -eq "y" -or $remote -eq "Y") {
+        $apiUrl = "http://${localIP}:8000"
+        Write-Host "Configuring for remote access at $localIP..." -ForegroundColor Yellow
+        
+        # Update .env with IP address
+        (Get-Content ".env") -replace 'REACT_APP_API_URL=http://localhost:8000', "REACT_APP_API_URL=$apiUrl" | Set-Content ".env"
+        
+        # Update backend CORS config
+        $configPath = "backend/app/config.py"
+        $configContent = Get-Content $configPath -Raw
+        $configContent = $configContent -replace 'CORS_ORIGINS: list = \["http://localhost:3000"\]', "CORS_ORIGINS: list = [`"http://localhost:3000`", `"http://${localIP}:3000`"]"
+        $configContent | Set-Content $configPath
+        
+        Write-Host "✓ Configured for remote access" -ForegroundColor Green
+        Write-Host "  Access from: http://${localIP}:3000" -ForegroundColor White
+    } else {
+        Write-Host "✓ Configured for local access only" -ForegroundColor Green
+    }
+    
+    Write-Host ""
+    Write-Host "✓ .env file created with secure credentials" -ForegroundColor Green
 } else {
     Write-Host "✓ .env file already exists" -ForegroundColor Green
 }
@@ -52,12 +98,20 @@ if ($start -eq "y" -or $start -eq "Y") {
     
     if ($LASTEXITCODE -eq 0) {
         Write-Host ""
-        Write-Host "✓ Dark Web Alert is now running!" -ForegroundColor Green
+        Write-Host "✓ Threat Intel Nom Nom is now running!" -ForegroundColor Green
         Write-Host ""
         Write-Host "Access the application at:" -ForegroundColor Cyan
-        Write-Host "  Frontend:  http://localhost:3000" -ForegroundColor White
-        Write-Host "  Backend:   http://localhost:8000" -ForegroundColor White
-        Write-Host "  API Docs:  http://localhost:8000/docs" -ForegroundColor White
+        if ($localIP -and $localIP -ne "localhost" -and ($remote -eq "y" -or $remote -eq "Y")) {
+            Write-Host "  Frontend:  http://${localIP}:3000" -ForegroundColor White
+            Write-Host "  Backend:   http://${localIP}:8000" -ForegroundColor White
+            Write-Host "  API Docs:  http://${localIP}:8000/docs" -ForegroundColor White
+        } else {
+            Write-Host "  Frontend:  http://localhost:3000" -ForegroundColor White
+            Write-Host "  Backend:   http://localhost:8000" -ForegroundColor White
+            Write-Host "  API Docs:  http://localhost:8000/docs" -ForegroundColor White
+        }
+        Write-Host ""
+        Write-Host "Default feeds and tags have been automatically configured." -ForegroundColor Green
         Write-Host ""
         Write-Host "View logs with: docker compose logs -f" -ForegroundColor Yellow
         Write-Host "Stop services with: docker compose down" -ForegroundColor Yellow
