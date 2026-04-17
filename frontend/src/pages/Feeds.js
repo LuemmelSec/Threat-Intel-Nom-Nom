@@ -241,7 +241,9 @@ function Feeds() {
       field: 'tags',
       headerName: 'Tags',
       width: 200,
-      renderCell: (params) => <TagDisplay tags={params.value} />,
+      valueGetter: (params) => params.row.tags?.map(t => t.name).join(', ') || '',
+      sortComparator: (v1, v2) => v1.localeCompare(v2),
+      renderCell: (params) => <TagDisplay tags={params.row.tags} />,
     },
     {
       field: 'actions',
