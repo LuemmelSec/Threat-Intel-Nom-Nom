@@ -139,6 +139,7 @@ class FeedKeywordAssociation(BaseModel):
 class StatisticsResponse(BaseModel):
     total_feeds: int
     active_feeds: int
+    healthy_feeds: int
     total_keywords: int
     active_keywords: int
     total_alerts: int

@@ -16,6 +16,12 @@ def get_statistics(db: Session = Depends(get_db)):
     total_feeds = db.query(func.count(Feed.id)).scalar()
     active_feeds = db.query(func.count(Feed.id)).filter(Feed.enabled == True).scalar()
     
+    # Healthy feeds (enabled with no consecutive failures)
+    healthy_feeds = db.query(func.count(Feed.id)).filter(
+        Feed.enabled == True,
+        Feed.consecutive_failures == 0
+    ).scalar()
+    
     # Total and active keywords
     total_keywords = db.query(func.count(Keyword.id)).scalar()
     active_keywords = db.query(func.count(Keyword.id)).filter(Keyword.enabled == True).scalar()
@@ -33,6 +39,7 @@ def get_statistics(db: Session = Depends(get_db)):
     return StatisticsResponse(
         total_feeds=total_feeds or 0,
         active_feeds=active_feeds or 0,
+        healthy_feeds=healthy_feeds or 0,
         total_keywords=total_keywords or 0,
         active_keywords=active_keywords or 0,
         total_alerts=total_alerts or 0,
