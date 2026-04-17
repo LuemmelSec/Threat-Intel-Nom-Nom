@@ -44,7 +44,7 @@ function Navigation() {
         <Toolbar>
           <ShieldIcon sx={{ mr: 2 }} />
           <Typography variant="h6" noWrap component="div">
-            Threat Alert
+            Threat Intel Nom Nom
           </Typography>
         </Toolbar>
       </AppBar>

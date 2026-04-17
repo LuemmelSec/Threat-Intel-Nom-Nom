@@ -7,18 +7,13 @@ import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import CircularProgress from '@mui/material/CircularProgress';
 import Chip from '@mui/material/Chip';
-import Table from '@mui/material/Table';
-import TableBody from '@mui/material/TableBody';
-import TableCell from '@mui/material/TableCell';
-import TableContainer from '@mui/material/TableContainer';
-import TableHead from '@mui/material/TableHead';
-import TableRow from '@mui/material/TableRow';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import WarningIcon from '@mui/icons-material/Warning';
 import ErrorIcon from '@mui/icons-material/Error';
 import BlockIcon from '@mui/icons-material/Block';
 import Button from '@mui/material/Button';
 import RefreshIcon from '@mui/icons-material/Refresh';
+import { DataGrid } from '@mui/x-data-grid';
 import axios from 'axios';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
@@ -187,98 +182,119 @@ function Logs() {
       </Grid>
 
       {/* Feed Status Table */}
-      <Paper sx={{ width: '100%', overflow: 'hidden' }}>
-        <TableContainer sx={{ maxHeight: 600 }}>
-          <Table stickyHeader>
-            <TableHead>
-              <TableRow>
-                <TableCell>Status</TableCell>
-                <TableCell>Feed Name</TableCell>
-                <TableCell>Type</TableCell>
-                <TableCell>Failures</TableCell>
-                <TableCell>Last Checked</TableCell>
-                <TableCell>Last Error</TableCell>
-                <TableCell>Error Time</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {feedErrors.map((feed) => (
-                <TableRow
-                  key={feed.id}
-                  sx={{
-                    '&:hover': { backgroundColor: 'rgba(0, 0, 0, 0.04)' },
-                    opacity: feed.status === 'disabled' ? 0.6 : 1,
-                  }}
-                >
-                  <TableCell>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      {getStatusIcon(feed.status)}
-                      <Chip
-                        label={feed.status.toUpperCase()}
-                        size="small"
-                        sx={{
-                          backgroundColor: getStatusColor(feed.status),
-                          color: 'white',
-                          fontWeight: 'bold',
-                        }}
-                      />
-                    </Box>
-                  </TableCell>
-                  <TableCell>
-                    <Typography variant="body2" fontWeight="medium">
-                      {feed.name}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Chip label={feed.feed_type} size="small" variant="outlined" />
-                  </TableCell>
-                  <TableCell>
-                    {feed.consecutive_failures > 0 ? (
-                      <Chip
-                        label={feed.consecutive_failures}
-                        size="small"
-                        color={feed.consecutive_failures >= 3 ? 'error' : 'warning'}
-                      />
-                    ) : (
-                      <Typography variant="body2" color="textSecondary">
-                        0
-                      </Typography>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <Typography variant="body2" color="textSecondary">
-                      {formatTimestamp(feed.last_fetched)}
-                    </Typography>
-                  </TableCell>
-                  <TableCell sx={{ maxWidth: 300 }}>
-                    {feed.last_error ? (
-                      <Typography
-                        variant="body2"
-                        sx={{
-                          color: '#f44336',
-                          fontFamily: 'monospace',
-                          fontSize: '0.75rem',
-                          wordBreak: 'break-word',
-                        }}
-                      >
-                        {feed.last_error}
-                      </Typography>
-                    ) : (
-                      <Typography variant="body2" color="textSecondary">
-                        No errors
-                      </Typography>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <Typography variant="body2" color="textSecondary">
-                      {formatTimestamp(feed.last_error_at)}
-                    </Typography>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
+      <Paper sx={{ width: '100%', height: 600 }}>
+        <DataGrid
+          rows={feedErrors}
+          columns={[
+            {
+              field: 'status',
+              headerName: 'Status',
+              width: 150,
+              renderCell: (params) => (
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  {getStatusIcon(params.value)}
+                  <Chip
+                    label={params.value.toUpperCase()}
+                    size="small"
+                    sx={{
+                      backgroundColor: getStatusColor(params.value),
+                      color: 'white',
+                      fontWeight: 'bold',
+                    }}
+                  />
+                </Box>
+              ),
+            },
+            {
+              field: 'name',
+              headerName: 'Feed Name',
+              flex: 1,
+              minWidth: 150,
+            },
+            {
+              field: 'feed_type',
+              headerName: 'Type',
+              width: 120,
+              renderCell: (params) => (
+                <Chip label={params.value} size="small" variant="outlined" />
+              ),
+            },
+            {
+              field: 'consecutive_failures',
+              headerName: 'Failures',
+              width: 100,
+              renderCell: (params) => (
+                params.value > 0 ? (
+                  <Chip
+                    label={params.value}
+                    size="small"
+                    color={params.value >= 3 ? 'error' : 'warning'}
+                  />
+                ) : (
+                  <Typography variant="body2" color="textSecondary">
+                    0
+                  </Typography>
+                )
+              ),
+            },
+            {
+              field: 'last_fetched',
+              headerName: 'Last Checked',
+              width: 150,
+              valueFormatter: (params) => formatTimestamp(params.value),
+            },
+            {
+              field: 'last_error',
+              headerName: 'Last Error',
+              flex: 2,
+              minWidth: 200,
+              renderCell: (params) => (
+                params.value ? (
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      color: '#f44336',
+                      fontFamily: 'monospace',
+                      fontSize: '0.75rem',
+                      wordBreak: 'break-word',
+                    }}
+                  >
+                    {params.value}
+                  </Typography>
+                ) : (
+                  <Typography variant="body2" color="textSecondary">
+                    No errors
+                  </Typography>
+                )
+              ),
+            },
+            {
+              field: 'last_error_at',
+              headerName: 'Error Time',
+              width: 150,
+              valueFormatter: (params) => formatTimestamp(params.value),
+            },
+          ]}
+          loading={loading}
+          disableRowSelectionOnClick
+          getRowClassName={(params) =>
+            params.row.status === 'disabled' ? 'disabled-row' : ''
+          }
+          initialState={{
+            pagination: {
+              paginationModel: { pageSize: 25 },
+            },
+            sorting: {
+              sortModel: [{ field: 'consecutive_failures', sort: 'desc' }],
+            },
+          }}
+          pageSizeOptions={[10, 25, 50, 100]}
+          sx={{
+            '& .disabled-row': {
+              opacity: 0.6,
+            },
+          }}
+        />
       </Paper>
     </Box>
   );

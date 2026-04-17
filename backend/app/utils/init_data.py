@@ -77,14 +77,6 @@ DEFAULT_FEEDS = [
         "enabled": True,
         "fetch_interval": 7200,
         "feed_metadata": {}
-    },
-    {
-        "name": "RansomFeed",
-        "feed_type": "website",
-        "url": "https://ransomfeed.it/api/v2/recent",
-        "enabled": True,
-        "fetch_interval": 3600,
-        "feed_metadata": {}
     }
 ]
 

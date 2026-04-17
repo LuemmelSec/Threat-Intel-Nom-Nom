@@ -19,8 +19,8 @@ Base.metadata.create_all(bind=engine)
 
 # Initialize FastAPI app
 app = FastAPI(
-    title="Dark Web Alert API",
-    description="Monitor dark web sources and receive alerts based on keywords",
+    title="Threat Intel Nom Nom API",
+    description="Monitor threat intelligence sources and receive alerts based on keywords",
     version="1.0.0"
 )
 
@@ -48,7 +48,7 @@ app.include_router(tags.router, prefix="/api")
 def root():
     """Root endpoint"""
     return {
-        "message": "Dark Web Alert API",
+        "message": "Threat Intel Nom Nom API",
         "version": "1.0.0",
         "docs": "/docs"
     }
@@ -63,7 +63,7 @@ def health_check():
 @app.on_event("startup")
 async def startup_event():
     """Run on application startup"""
-    logger.info("Starting Dark Web Alert API...")
+    logger.info("Starting Threat Intel Nom Nom API...")
     logger.info("Database tables created/verified")
     db = SessionLocal()
     try:
@@ -76,4 +76,4 @@ async def startup_event():
 @app.on_event("shutdown")
 async def shutdown_event():
     """Run on application shutdown"""
-    logger.info("Shutting down Dark Web Alert API...")
+    logger.info("Shutting down Threat Intel Nom Nom API...")
