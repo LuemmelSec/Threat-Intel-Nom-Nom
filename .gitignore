@@ -63,3 +63,7 @@ Thumbs.db
 
 # Docker
 *.pid
+
+# Backups and rollback documentation
+backups/
+ROLLBACK.md
