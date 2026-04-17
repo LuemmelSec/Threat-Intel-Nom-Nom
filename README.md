@@ -1,6 +1,6 @@
 # Threat Intel Nom Nom
 
-An enterprise-grade threat intelligence monitoring platform that aggregates security feeds from multiple sources and generates automated alerts based on custom keywords. Monitor ransomware gangs, security advisories, dark web forums, and more - all from a single dashboard.
+A threat intelligence monitoring platform that aggregates security feeds from multiple sources and generates automated alerts based on custom keywords. Monitor ransomware gangs, security advisories, dark web forums, and more - all from a single dashboard.
 
 ## Key Features
 
