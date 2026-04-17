@@ -2,6 +2,7 @@
 
 A threat intelligence monitoring tool that aggregates security feeds and generates alerts based on custom keywords.
 <img width="1860" height="904" alt="image" src="https://github.com/user-attachments/assets/45f5113f-70da-40f9-a9f4-90b2308ac475" />
+<img width="1905" height="909" alt="nomnom" src="https://github.com/user-attachments/assets/0bc8665b-1b53-4292-aac3-27f419b97033" />
 
 ## Features
 
