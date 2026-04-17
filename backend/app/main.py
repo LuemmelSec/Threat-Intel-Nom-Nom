@@ -68,8 +68,8 @@ async def startup_event():
     db = SessionLocal()
     try:
         initialize_default_templates(db)
-        initialize_default_feeds(db)
         initialize_default_tags(db)
+        initialize_default_feeds(db)
     finally:
         db.close()
 
