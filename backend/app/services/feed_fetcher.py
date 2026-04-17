@@ -7,6 +7,7 @@ from typing import Optional, Dict, Any, List
 from bs4 import BeautifulSoup
 from app.config import settings
 import logging
+import httpx_socks
 
 logger = logging.getLogger(__name__)
 
@@ -30,9 +31,24 @@ class WebsiteFetcher(FeedFetcher):
             client_kwargs = {"timeout": 30.0, "follow_redirects": True}
             
             if use_tor:
-                # For SOCKS proxies with httpx[socks], use proxy parameter
-                # httpx will use socksio under the hood
-                client_kwargs["proxy"] = settings.TOR_PROXY
+                # Extract host and port from TOR_PROXY URL
+                # Format: socks5h://tor:9050 or socks5://tor:9050
+                proxy_url = settings.TOR_PROXY.replace("socks5h://", "socks5://")
+                
+                # For .onion domains, use httpx_socks for proper SOCKS5 with remote DNS resolution
+                from httpx_socks import AsyncProxyTransport
+                
+                # Parse proxy URL to get host and port
+                proxy_parts = proxy_url.replace("socks5://", "").split(":")
+                proxy_host = proxy_parts[0]
+                proxy_port = int(proxy_parts[1]) if len(proxy_parts) > 1 else 9050
+                
+                # Use SOCKS5 transport with remote DNS (rdns=True)
+                transport = AsyncProxyTransport.from_url(
+                    f"socks5://{proxy_host}:{proxy_port}",
+                    rdns=True  # This enables remote DNS resolution for .onion domains
+                )
+                client_kwargs["transport"] = transport
             
             async with httpx.AsyncClient(**client_kwargs) as client:
                 response = await client.get(url)

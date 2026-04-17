@@ -22,7 +22,7 @@ class Settings(BaseSettings):
     SMTP_FROM: str = "alerts@darkweb.local"
     
     # Tor Proxy
-    TOR_PROXY: str = "socks5://tor:9050"
+    TOR_PROXY: str = "socks5h://tor:9050"
     
     # CORS
     CORS_ORIGINS: list = ["http://localhost:3000", "http://frontend:3000"]

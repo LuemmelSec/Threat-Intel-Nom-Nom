@@ -47,7 +47,7 @@ services:
       SMTP_USER: ${SMTP_USER:-}
       SMTP_PASSWORD: ${SMTP_PASSWORD:-}
       SMTP_FROM: ${SMTP_FROM:-alerts@darkweb.local}
-      TOR_PROXY: ${TOR_PROXY:-socks5://tor:9050}
+      TOR_PROXY: ${TOR_PROXY:-socks5h://tor:9050}
     volumes:
       - ./backend:/app
     ports:
@@ -77,7 +77,7 @@ services:
       SMTP_USER: ${SMTP_USER:-}
       SMTP_PASSWORD: ${SMTP_PASSWORD:-}
       SMTP_FROM: ${SMTP_FROM:-alerts@darkweb.local}
-      TOR_PROXY: ${TOR_PROXY:-socks5://tor:9050}
+      TOR_PROXY: ${TOR_PROXY:-socks5h://tor:9050}
     volumes:
       - ./backend:/app
     depends_on:
@@ -100,7 +100,7 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:-darkweb}:${POSTGRES_PASSWORD:-darkweb_password}@postgres:5432/${POSTGRES_DB:-darkweb_db}
       REDIS_URL: redis://redis:6379/0
       SECRET_KEY: ${SECRET_KEY:-your-secret-key-change-this}
-      TOR_PROXY: ${TOR_PROXY:-socks5://tor:9050}
+      TOR_PROXY: ${TOR_PROXY:-socks5h://tor:9050}
     volumes:
       - ./backend:/app
     depends_on:
