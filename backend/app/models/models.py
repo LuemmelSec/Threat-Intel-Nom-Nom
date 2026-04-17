@@ -34,6 +34,28 @@ feed_keywords = Table(
     Column('keyword_id', Integer, ForeignKey('keywords.id', ondelete='CASCADE'))
 )
 
+# Association tables for Tag relationships
+feed_tags = Table(
+    'feed_tags',
+    Base.metadata,
+    Column('feed_id', Integer, ForeignKey('feeds.id', ondelete='CASCADE')),
+    Column('tag_id', Integer, ForeignKey('tags.id', ondelete='CASCADE'))
+)
+
+keyword_tags = Table(
+    'keyword_tags',
+    Base.metadata,
+    Column('keyword_id', Integer, ForeignKey('keywords.id', ondelete='CASCADE')),
+    Column('tag_id', Integer, ForeignKey('tags.id', ondelete='CASCADE'))
+)
+
+alert_tags = Table(
+    'alert_tags',
+    Base.metadata,
+    Column('alert_id', Integer, ForeignKey('alerts.id', ondelete='CASCADE')),
+    Column('tag_id', Integer, ForeignKey('tags.id', ondelete='CASCADE'))
+)
+
 
 class Feed(Base):
     __tablename__ = "feeds"
@@ -56,6 +78,7 @@ class Feed(Base):
     # Relationships
     keywords = relationship("Keyword", secondary=feed_keywords, back_populates="feeds")
     alerts = relationship("Alert", back_populates="feed", cascade="all, delete-orphan")
+    tags = relationship("Tag", secondary=feed_tags, back_populates="feeds")
 
 
 class Keyword(Base):
@@ -72,6 +95,7 @@ class Keyword(Base):
     # Relationships
     feeds = relationship("Feed", secondary=feed_keywords, back_populates="keywords")
     alerts = relationship("Alert", back_populates="keyword", cascade="all, delete-orphan")
+    tags = relationship("Tag", secondary=keyword_tags, back_populates="keywords")
 
 
 class Alert(Base):
@@ -91,6 +115,7 @@ class Alert(Base):
     feed = relationship("Feed", back_populates="alerts")
     keyword = relationship("Keyword", back_populates="alerts")
     notifications = relationship("Notification", back_populates="alert", cascade="all, delete-orphan")
+    tags = relationship("Tag", secondary=alert_tags, back_populates="alerts")
 
 
 class Notification(Base):
@@ -131,3 +156,18 @@ class APITemplate(Base):
     enabled = Column(Boolean, default=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+
+class Tag(Base):
+    __tablename__ = "tags"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(100), nullable=False, unique=True, index=True)
+    color = Column(String(7), default="#3b82f6")  # Hex color for UI display
+    description = Column(Text, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    
+    # Relationships
+    feeds = relationship("Feed", secondary=feed_tags, back_populates="tags")
+    keywords = relationship("Keyword", secondary=keyword_tags, back_populates="tags")
+    alerts = relationship("Alert", secondary=alert_tags, back_populates="tags")

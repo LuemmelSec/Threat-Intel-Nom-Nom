@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
 from app.database import engine, Base, SessionLocal
-from app.api import feeds, keywords, alerts, notifications, stats, logs, templates
+from app.api import feeds, keywords, alerts, notifications, stats, logs, templates, tags
 from app.utils.init_data import initialize_default_feeds, initialize_default_templates
 import logging
 
@@ -41,6 +41,7 @@ app.include_router(notifications.router, prefix="/api")
 app.include_router(stats.router, prefix="/api")
 app.include_router(logs.router, prefix="/api/logs", tags=["logs"])
 app.include_router(templates.router)
+app.include_router(tags.router, prefix="/api")
 
 
 @app.get("/")

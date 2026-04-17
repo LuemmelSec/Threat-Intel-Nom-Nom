@@ -14,6 +14,7 @@ import Notifications from './pages/Notifications';
 import Logs from './pages/Logs';
 import Settings from './pages/Settings';
 import APITemplates from './pages/APITemplates';
+import Tags from './pages/Tags';
 
 // Create dark theme
 const darkTheme = createTheme({
@@ -50,6 +51,7 @@ function App() {
               <Route path="/alerts" element={<Alerts />} />
               <Route path="/notifications" element={<Notifications />} />
               <Route path="/api-templates" element={<APITemplates />} />
+              <Route path="/tags" element={<Tags />} />
               <Route path="/logs" element={<Logs />} />
               <Route path="/settings" element={<Settings />} />
             </Routes>

@@ -82,25 +82,20 @@ class RSSFetcher(FeedFetcher):
     async def fetch(url: str) -> Dict[str, Any]:
         """Fetch RSS feed"""
         try:
-            # Use browser-like headers to avoid being blocked by services like Nitter
+            # Use browser-like headers to avoid being blocked
             headers = {
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
                 "Accept": "application/rss+xml, application/xml, text/xml, */*",
-                "Accept-Language": "en-US,en;q=0.9",
-                "Accept-Encoding": "gzip, deflate, br",
-                "DNT": "1",
-                "Connection": "keep-alive",
-                "Upgrade-Insecure-Requests": "1"
             }
             
             async with httpx.AsyncClient(timeout=30.0, follow_redirects=True, headers=headers) as client:
                 response = await client.get(url)
                 response.raise_for_status()
                 
-                logger.debug(f"RSS response for {url}: status={response.status_code}, length={len(response.text)}")
-                
-                # Parse RSS feed
-                feed = feedparser.parse(response.text)
+                # Parse RSS feed with raw bytes - let feedparser handle encoding
+                # Use BytesIO to avoid any encoding issues
+                from io import BytesIO
+                feed = feedparser.parse(BytesIO(response.content))
                 
                 logger.debug(f"Feedparser result for {url}: entries={len(feed.entries)}, bozo={feed.bozo}")
                 if feed.bozo and hasattr(feed, 'bozo_exception'):

@@ -33,6 +33,7 @@ class FeedResponse(FeedBase):
     created_at: datetime
     updated_at: Optional[datetime]
     keywords: List['KeywordResponse'] = []
+    tags: List['TagResponse'] = []
     
     class Config:
         from_attributes = True
@@ -62,6 +63,7 @@ class KeywordUpdate(BaseModel):
 class KeywordResponse(KeywordBase):
     id: int
     created_at: datetime
+    tags: List['TagResponse'] = []
     
     class Config:
         from_attributes = True
@@ -85,6 +87,7 @@ class AlertResponse(BaseModel):
     read: bool
     feed: 'FeedBasicResponse'
     keyword: KeywordResponse
+    tags: List['TagResponse'] = []
     
     class Config:
         from_attributes = True
@@ -179,6 +182,35 @@ class APITemplateTestResponse(BaseModel):
     sample_data: Optional[List[Dict[str, Any]]] = None
     mapped_fields: Optional[Dict[str, Any]] = None
     error: Optional[str] = None
+
+
+# Tag Schemas
+class TagBase(BaseModel):
+    name: str
+    color: str = "#3b82f6"
+    description: Optional[str] = None
+
+
+class TagCreate(TagBase):
+    pass
+
+
+class TagUpdate(BaseModel):
+    name: Optional[str] = None
+    color: Optional[str] = None
+    description: Optional[str] = None
+
+
+class TagResponse(TagBase):
+    id: int
+    created_at: datetime
+    
+    class Config:
+        from_attributes = True
+
+
+class TagAssignment(BaseModel):
+    tag_ids: List[int]
 
 
 # Update forward references

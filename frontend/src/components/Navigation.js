@@ -13,6 +13,7 @@ import ListItemText from '@mui/material/ListItemText';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import RssFeedIcon from '@mui/icons-material/RssFeed';
 import LabelIcon from '@mui/icons-material/Label';
+import LocalOfferIcon from '@mui/icons-material/LocalOffer';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import WarningIcon from '@mui/icons-material/Warning';
 import ShieldIcon from '@mui/icons-material/Shield';
@@ -26,6 +27,7 @@ const menuItems = [
   { text: 'Dashboard', icon: <DashboardIcon />, path: '/' },
   { text: 'Feeds', icon: <RssFeedIcon />, path: '/feeds' },
   { text: 'Keywords', icon: <LabelIcon />, path: '/keywords' },
+  { text: 'Tags', icon: <LocalOfferIcon />, path: '/tags' },
   { text: 'Alerts', icon: <WarningIcon />, path: '/alerts' },
   { text: 'Notifications', icon: <NotificationsIcon />, path: '/notifications' },
   { text: 'API Templates', icon: <ApiIcon />, path: '/api-templates' },
