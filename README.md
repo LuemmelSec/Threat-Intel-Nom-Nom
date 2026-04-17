@@ -1,12 +1,12 @@
-# Threat Alert
+# Threat Intel Nom Nom
 
 A comprehensive threat intelligence monitoring platform for tracking security feeds, dark web sources, CVE databases, and threat intelligence sources. The system automatically monitors multiple sources and generates alerts based on custom keywords with configurable criticality levels.
 
 ## Features
 
 ### Feed Monitoring
-- **Multiple Feed Types**: Regular websites, onion sites (via Tor), and RSS feeds
-- **Automatic Initialization**: 10 curated cybersecurity feeds included by default (CISA advisories, CVE databases, HaveIBeenPwned, security blogs)
+- **Multiple Feed Types**: API endpoints, RSS feeds, regular websites, and onion sites (via Tor)
+- **Automatic Initialization**: 20 curated threat intelligence feeds included by default (ransomware trackers, security blogs, dark web sources)
 - **Configurable Intervals**: Set custom fetch intervals per feed (minimum 60 seconds)
 - **Manual Triggering**: Force immediate feed checks from the UI
 - **Content Change Detection**: SHA256 hash-based detection to avoid redundant processing
@@ -120,17 +120,35 @@ If you prefer manual setup or need more control:
 
 ### Default Configuration
 
-The system automatically initializes with 10 curated cybersecurity feeds on first startup:
-- CISA Known Exploited Vulnerabilities
-- CISA Security Advisories
-- US-CERT Alerts
-- CVE Recent Entries
-- NVD Recent CVEs
+The system automatically initializes with 20 curated threat intelligence feeds on first startup:
+
+**API Feeds:**
+- Ransomfeed.it API
+- RansomLook API Recent
+
+**RSS Feeds:**
+- Bleeping Computer Security
+- CISA Advisories
+- Dark Reading
+- Dark Web Informer RSS
+- Hackmanac RSS
 - HaveIBeenPwned Breach Feed
-- Krebs on Security Blog
-- Bleeping Computer Feed
+- Krebs on Security
+- LuemmelSec RSS
+- Security Affairs
 - The Hacker News
-- Dark Reading Feed
+- Threat Post
+
+**Website Feeds:**
+- Dark Web Informer
+- Ransomware.live
+
+**Onion Feeds (Dark Web):**
+- Coinbasecartel
+- DragonForce
+- LockBit
+- Qilin
+- ShadowByt3$ LEAKS
 
 ## Configuration
 

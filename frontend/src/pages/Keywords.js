@@ -28,7 +28,7 @@ import TagDisplay from '../components/TagDisplay';
 import TagSelector from '../components/TagSelector';
 import axios from 'axios';
 
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://192.168.10.161:8000';
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8000';
 
 function Keywords() {
   const [keywords, setKeywords] = useState([]);

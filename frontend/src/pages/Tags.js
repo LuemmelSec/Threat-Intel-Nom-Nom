@@ -18,7 +18,7 @@ import LabelIcon from '@mui/icons-material/Label';
 import { DataGrid } from '@mui/x-data-grid';
 import axios from 'axios';
 
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://192.168.10.161:8000';
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8000';
 
 function Tags() {
   const [tags, setTags] = useState([]);
