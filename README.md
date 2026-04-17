@@ -65,7 +65,11 @@ The scripts will:
 
 Edit `.env`:
 ```env
+<<<<<<< HEAD
 REACT_APP_API_URL=http://YOUR_IP:8000
+=======
+REACT_APP_API_BASE_URL=http://YOUR_IP:8000
+>>>>>>> 2b52af8302058dc78e373f3fc56fdfb3cac903ef
 ```
 
 Edit `backend/app/config.py`:
