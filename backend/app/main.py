@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
 from app.database import engine, Base, SessionLocal
 from app.api import feeds, keywords, alerts, notifications, stats, logs, templates, tags
-from app.utils.init_data import initialize_default_feeds, initialize_default_templates
+from app.utils.init_data import initialize_default_feeds, initialize_default_templates, initialize_default_tags
 import logging
 
 # Configure logging
@@ -67,8 +67,9 @@ async def startup_event():
     logger.info("Database tables created/verified")
     db = SessionLocal()
     try:
-        initialize_default_feeds(db)
         initialize_default_templates(db)
+        initialize_default_feeds(db)
+        initialize_default_tags(db)
     finally:
         db.close()
 

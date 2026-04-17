@@ -1,35 +1,29 @@
 """Initialize database with default data"""
 import logging
 from sqlalchemy.orm import Session
-from app.models.models import Feed, APITemplate
+from app.models.models import Feed, APITemplate, Tag
 
 logger = logging.getLogger(__name__)
 
 DEFAULT_FEEDS = [
+    # API Feeds (1-2)
     {
-        "name": "HIBP Breach Feed",
-        "feed_type": "rss",
-        "url": "https://haveibeenpwned.com/feed/breaches",
+        "name": "Ransomfeed.it",
+        "feed_type": "api",
+        "url": "https://api.ransomfeed.it/",
         "enabled": True,
         "fetch_interval": 3600,
-        "feed_metadata": {}
+        "feed_metadata": {"template_id": 1}
     },
     {
         "name": "RansomLook API Recent",
-        "feed_type": "website",
+        "feed_type": "api",
         "url": "https://www.ransomlook.io/api/recent",
         "enabled": True,
         "fetch_interval": 3600,
-        "feed_metadata": {}
+        "feed_metadata": {"template_id": 2}
     },
-    {
-        "name": "Krebs on Security",
-        "feed_type": "rss",
-        "url": "https://krebsonsecurity.com/feed/",
-        "enabled": True,
-        "fetch_interval": 7200,
-        "feed_metadata": {}
-    },
+    # RSS Feeds (3-13) - alphabetical
     {
         "name": "Bleeping Computer Security",
         "feed_type": "rss",
@@ -44,6 +38,62 @@ DEFAULT_FEEDS = [
         "url": "https://www.cisa.gov/cybersecurity-advisories/all.xml",
         "enabled": True,
         "fetch_interval": 3600,
+        "feed_metadata": {}
+    },
+    {
+        "name": "Dark Reading",
+        "feed_type": "rss",
+        "url": "https://www.darkreading.com/rss.xml",
+        "enabled": True,
+        "fetch_interval": 3600,
+        "feed_metadata": {}
+    },
+    {
+        "name": "Dark Web Informer",
+        "feed_type": "rss",
+        "url": "https://nitter.net/DarkWebInformer/rss",
+        "enabled": True,
+        "fetch_interval": 3600,
+        "feed_metadata": {}
+    },
+    {
+        "name": "Hackmanac",
+        "feed_type": "rss",
+        "url": "https://nitter.net/H4ckmanac/rss",
+        "enabled": True,
+        "fetch_interval": 3600,
+        "feed_metadata": {}
+    },
+    {
+        "name": "HIBP Breach Feed",
+        "feed_type": "rss",
+        "url": "https://haveibeenpwned.com/feed/breaches",
+        "enabled": True,
+        "fetch_interval": 3600,
+        "feed_metadata": {}
+    },
+    {
+        "name": "Krebs on Security",
+        "feed_type": "rss",
+        "url": "https://krebsonsecurity.com/feed/",
+        "enabled": True,
+        "fetch_interval": 7200,
+        "feed_metadata": {}
+    },
+    {
+        "name": "LuemmelSec",
+        "feed_type": "rss",
+        "url": "https://nitter.net/theluemmel/rss",
+        "enabled": True,
+        "fetch_interval": 3600,
+        "feed_metadata": {}
+    },
+    {
+        "name": "Security Affairs",
+        "feed_type": "rss",
+        "url": "https://securityaffairs.com/feed",
+        "enabled": True,
+        "fetch_interval": 7200,
         "feed_metadata": {}
     },
     {
@@ -62,21 +112,76 @@ DEFAULT_FEEDS = [
         "fetch_interval": 3600,
         "feed_metadata": {}
     },
+    # Website Feeds (14-15) - alphabetical
     {
-        "name": "Dark Reading",
-        "feed_type": "rss",
-        "url": "https://www.darkreading.com/rss.xml",
+        "name": "Dark Web Informer",
+        "feed_type": "website",
+        "url": "https://darkwebinformer.com/",
         "enabled": True,
         "fetch_interval": 3600,
         "feed_metadata": {}
     },
     {
-        "name": "Security Affairs",
-        "feed_type": "rss",
-        "url": "https://securityaffairs.com/feed",
+        "name": "Ransomware.live",
+        "feed_type": "website",
+        "url": "https://www.ransomware.live/",
         "enabled": True,
-        "fetch_interval": 7200,
+        "fetch_interval": 3600,
         "feed_metadata": {}
+    },
+    # Onion Feeds (16-20) - alphabetical
+    {
+        "name": "Coinbasecartel",
+        "feed_type": "onion",
+        "url": "http://fjg4zi4opkxkvdz7mvwp7h6goe4tcby3hhkrz43pht4j3vakhy75znyd.onion",
+        "enabled": True,
+        "fetch_interval": 3600,
+        "feed_metadata": {}
+    },
+    {
+        "name": "DragonForce",
+        "feed_type": "onion",
+        "url": "http://z3wqggtxft7id3ibr7srivv5gjof5fwg76slewnzwwakjuf3nlhukdid.onion/blog",
+        "enabled": True,
+        "fetch_interval": 3600,
+        "feed_metadata": {}
+    },
+    {
+        "name": "LockBit",
+        "feed_type": "onion",
+        "url": "http://lockbit3753ekiocyo5epmpy6klmejchjtzddoekjlnt6mu3qh4de2id.onion/",
+        "enabled": True,
+        "fetch_interval": 3600,
+        "feed_metadata": {}
+    },
+    {
+        "name": "Qilin",
+        "feed_type": "onion",
+        "url": "http://ijzn3sicrcy7guixkzjkib4ukbiilwc3xhnmby4mcbccnsd7j2rekvqd.onion/",
+        "enabled": True,
+        "fetch_interval": 3600,
+        "feed_metadata": {}
+    },
+    {
+        "name": "ShadowByt3$ LEAKS",
+        "feed_type": "onion",
+        "url": "http://sdwbytqeb664krp2wz2qs3lxxah2rhneuotot5hy7g4jpn2pindigcad.onion/leaks.php",
+        "enabled": True,
+        "fetch_interval": 3600,
+        "feed_metadata": {}
+    }
+]
+
+DEFAULT_TAGS = [
+    {
+        "name": "X",
+        "color": "#000000",
+        "description": ""
+    },
+    {
+        "name": "Ransomware Gang",
+        "color": "#540ed8",
+        "description": ""
     }
 ]
 
@@ -208,3 +313,34 @@ def initialize_default_templates(db: Session) -> None:
     except Exception as e:
         db.rollback()
         logger.error(f"Failed to initialize default API templates: {e}")
+
+
+def initialize_default_tags(db: Session) -> None:
+    """
+    Initialize database with default tags if they don't exist.
+    Called automatically on application startup.
+    """
+    try:
+        # Get existing tag names
+        existing_names = {tag.name for tag in db.query(Tag).all()}
+        
+        # Add missing default tags
+        added = 0
+        for tag_data in DEFAULT_TAGS:
+            if tag_data["name"] in existing_names:
+                continue
+            
+            tag = Tag(**tag_data)
+            db.add(tag)
+            added += 1
+            logger.info(f"Added default tag: {tag_data['name']}")
+        
+        if added > 0:
+            db.commit()
+            logger.info(f"✅ Initialized {added} default tags")
+        else:
+            logger.info(f"All default tags already exist ({len(existing_names)} total)")
+        
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Failed to initialize default tags: {e}")
