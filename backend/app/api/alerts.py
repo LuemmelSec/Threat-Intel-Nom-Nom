@@ -4,7 +4,7 @@ from sqlalchemy import desc
 from typing import List, Optional
 from datetime import datetime, timedelta
 from app.database import get_db
-from app.models import Alert, AlertResponse, AlertUpdate, Criticality
+from app.models import Alert, AlertResponse, AlertUpdate, Criticality, SuppressedAlert
 from app.services import AlertService
 
 router = APIRouter(prefix="/alerts", tags=["alerts"])
@@ -104,15 +104,21 @@ def cleanup_old_alerts(
     days: int = Query(..., description="Delete alerts older than this many days", ge=1),
     db: Session = Depends(get_db)
 ):
-    """Delete alerts older than specified number of days"""
+    """Delete alerts older than specified number of days and suppress them"""
     cutoff_date = datetime.utcnow() - timedelta(days=days)
     
     # Query alerts older than cutoff date
     old_alerts = db.query(Alert).filter(Alert.triggered_at < cutoff_date).all()
     count = len(old_alerts)
     
-    # Delete them
+    # Record suppressions then delete
     for alert in old_alerts:
+        db.add(SuppressedAlert(
+            feed_id=alert.feed_id,
+            article_hash=alert.article_hash,
+            context_hash=alert.context_hash,
+            keyword_id=alert.keyword_id,
+        ))
         db.delete(alert)
     
     db.commit()
@@ -126,10 +132,18 @@ def cleanup_old_alerts(
 
 @router.delete("/{alert_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_alert(alert_id: int, db: Session = Depends(get_db)):
-    """Delete an alert"""
+    """Delete an alert and suppress it from re-triggering"""
     alert = db.query(Alert).filter(Alert.id == alert_id).first()
     if not alert:
         raise HTTPException(status_code=404, detail="Alert not found")
+    
+    # Record suppression so this alert is never recreated
+    db.add(SuppressedAlert(
+        feed_id=alert.feed_id,
+        article_hash=alert.article_hash,
+        context_hash=alert.context_hash,
+        keyword_id=alert.keyword_id,
+    ))
     
     db.delete(alert)
     db.commit()

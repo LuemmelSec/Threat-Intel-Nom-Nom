@@ -117,12 +117,26 @@ class RSSFetcher(FeedFetcher):
                 if feed.bozo and hasattr(feed, 'bozo_exception'):
                     logger.warning(f"Feedparser warning for {url}: {feed.bozo_exception}")
                 
-                # Combine all entry titles and descriptions
+                # Build per-entry content (HTML-stripped) for per-item matching
+                entries_data = []
                 content_parts = []
                 for entry in feed.entries:
                     title = getattr(entry, 'title', '')
                     description = getattr(entry, 'description', '')
-                    content_parts.append(f"{title} {description}")
+                    # Strip HTML tags from description
+                    if description:
+                        soup_desc = BeautifulSoup(description, 'html.parser')
+                        description_text = soup_desc.get_text(separator=' ')
+                    else:
+                        description_text = ''
+                    entry_content = f"{title} {description_text}".strip()
+                    content_parts.append(entry_content)
+                    entries_data.append({
+                        "title": title,
+                        "link": getattr(entry, 'link', ''),
+                        "published": getattr(entry, 'published', ''),
+                        "content": entry_content,
+                    })
                 
                 content = ' '.join(content_parts)
                 
@@ -132,14 +146,7 @@ class RSSFetcher(FeedFetcher):
                     "success": True,
                     "content": content,
                     "title": feed.feed.title if hasattr(feed.feed, 'title') else None,
-                    "entries": [
-                        {
-                            "title": getattr(entry, 'title', ''),
-                            "link": getattr(entry, 'link', ''),
-                            "published": getattr(entry, 'published', '')
-                        }
-                        for entry in feed.entries
-                    ],
+                    "entries": entries_data,
                     "hash": FeedFetcher.get_content_hash(content)
                 }
         except Exception as e:

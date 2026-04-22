@@ -67,3 +67,4 @@ Thumbs.db
 # Backups and rollback documentation
 backups/
 ROLLBACK.md
+*.bak

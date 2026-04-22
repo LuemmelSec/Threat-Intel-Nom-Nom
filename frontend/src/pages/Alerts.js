@@ -16,10 +16,14 @@ import IconButton from '@mui/material/IconButton';
 import Chip from '@mui/material/Chip';
 import Paper from '@mui/material/Paper';
 import Toolbar from '@mui/material/Toolbar';
+import Tooltip from '@mui/material/Tooltip';
+import Link from '@mui/material/Link';
 import MarkEmailReadIcon from '@mui/icons-material/MarkEmailRead';
 import MarkEmailUnreadIcon from '@mui/icons-material/MarkEmailUnread';
 import DeleteIcon from '@mui/icons-material/Delete';
 import VisibilityIcon from '@mui/icons-material/Visibility';
+import OpenInNewIcon from '@mui/icons-material/OpenInNew';
+import LinkIcon from '@mui/icons-material/Link';
 import { DataGrid } from '@mui/x-data-grid';
 import { alertsApi } from '../api/client';
 import TagDisplay from '../components/TagDisplay';
@@ -27,6 +31,80 @@ import TagSelector from '../components/TagSelector';
 import axios from 'axios';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+
+/* ------------------------------------------------------------------ */
+/* Helper: highlight MULTIPLE keywords inside a text string            */
+/* ------------------------------------------------------------------ */
+function HighlightedText({ text, keywords }) {
+  if (!text || !keywords || keywords.length === 0) return <>{text}</>;
+  // Build a single regex that matches any of the keywords
+  const escaped = keywords.map(k => k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+  const regex = new RegExp(`(${escaped.join('|')})`, 'gi');
+  const parts = text.split(regex);
+  return (
+    <>
+      {parts.map((part, i) =>
+        regex.test(part) ? (
+          <mark key={i} style={{ backgroundColor: '#ffe082', color: '#000', padding: '0 2px', borderRadius: 2 }}>
+            {part}
+          </mark>
+        ) : (
+          <span key={i}>{part}</span>
+        )
+      )}
+    </>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Helper: render IOC chips                                           */
+/* ------------------------------------------------------------------ */
+const IOC_COLORS = {
+  cves: '#e53935',
+  ipv4: '#fb8c00',
+  sha256: '#7b1fa2',
+  sha1: '#7b1fa2',
+  md5: '#7b1fa2',
+  domains: '#1e88e5',
+  urls: '#00897b',
+};
+
+function IOCDisplay({ iocs }) {
+  if (!iocs || Object.keys(iocs).length === 0) return null;
+  return (
+    <Paper sx={{ p: 2, mb: 2, backgroundColor: 'background.default' }}>
+      <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+        Extracted IOCs
+      </Typography>
+      {Object.entries(iocs).map(([type, values]) => (
+        <Box key={type} sx={{ mb: 1 }}>
+          <Typography variant="caption" sx={{ fontWeight: 'bold', textTransform: 'uppercase', mr: 1 }}>
+            {type}:
+          </Typography>
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 0.5 }}>
+            {values.map((val, i) => (
+              <Chip
+                key={i}
+                label={val}
+                size="small"
+                sx={{
+                  backgroundColor: IOC_COLORS[type] || '#616161',
+                  color: '#fff',
+                  fontFamily: 'monospace',
+                  fontSize: '0.75rem',
+                  maxWidth: 400,
+                  '& .MuiChip-label': { whiteSpace: 'normal', wordBreak: 'break-all' },
+                }}
+                onClick={() => navigator.clipboard.writeText(val)}
+                title="Click to copy"
+              />
+            ))}
+          </Box>
+        </Box>
+      ))}
+    </Paper>
+  );
+}
 
 function Alerts() {
   const [searchParams] = useSearchParams();
@@ -155,19 +233,50 @@ function Alerts() {
     },
     {
       field: 'keyword',
-      headerName: 'Keyword',
-      width: 150,
-      valueGetter: (params) => params.row.keyword.keyword,
+      headerName: 'Keywords',
+      width: 180,
+      valueGetter: (params) => {
+        const mkw = params.row.matched_keywords;
+        if (mkw && mkw.length > 0) return mkw.map(k => k.keyword).join(', ');
+        return params.row.keyword?.keyword || '';
+      },
+      renderCell: (params) => {
+        const mkw = params.row.matched_keywords;
+        if (mkw && mkw.length > 1) {
+          return (
+            <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', alignItems: 'center' }}>
+              {mkw.map((k, i) => (
+                <Chip key={i} label={k.keyword} size="small" color="primary" variant="outlined" />
+              ))}
+            </Box>
+          );
+        }
+        if (mkw && mkw.length === 1) return mkw[0].keyword;
+        return params.row.keyword?.keyword || '';
+      },
     },
     {
-      field: 'matched_content',
-      headerName: 'Matched Content',
-      width: 250,
-      renderCell: (params) => (
-        <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-          {params.value}
-        </span>
-      ),
+      field: 'article_title',
+      headerName: 'Article',
+      width: 200,
+      valueGetter: (params) => params.row.api_metadata?.article_title || '',
+      renderCell: (params) => {
+        const title = params.row.api_metadata?.article_title;
+        const link = params.row.api_metadata?.article_link;
+        if (!title) return <span style={{ color: '#999' }}>—</span>;
+        return (
+          <Tooltip title={link || title} arrow>
+            <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {link ? (
+                <Link href={link} target="_blank" rel="noopener" underline="hover" color="inherit" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                  {title}
+                  <OpenInNewIcon sx={{ fontSize: 12 }} />
+                </Link>
+              ) : title}
+            </span>
+          </Tooltip>
+        );
+      },
     },
     {
       field: 'read',
@@ -254,9 +363,14 @@ function Alerts() {
   ];
 
   const filteredAlerts = alerts.filter(alert => {
-    const matchesText = alert.feed.name.toLowerCase().includes(filterText.toLowerCase()) ||
-      alert.keyword.keyword.toLowerCase().includes(filterText.toLowerCase()) ||
-      alert.matched_content.toLowerCase().includes(filterText.toLowerCase());
+    const articleTitle = alert.api_metadata?.article_title || '';
+    const mkwText = (alert.matched_keywords || []).map(k => k.keyword).join(' ');
+    const searchText = filterText.toLowerCase();
+    const matchesText = alert.feed.name.toLowerCase().includes(searchText) ||
+      alert.keyword.keyword.toLowerCase().includes(searchText) ||
+      alert.matched_content.toLowerCase().includes(searchText) ||
+      articleTitle.toLowerCase().includes(searchText) ||
+      mkwText.toLowerCase().includes(searchText);
     
     const matchesStatus = statusFilter === 'all' || 
       (statusFilter === 'read' && alert.read) ||
@@ -373,6 +487,7 @@ function Alerts() {
         <DialogContent>
           {selectedAlert && (
             <Box>
+              {/* Feed info */}
               <Paper sx={{ p: 2, mb: 2, backgroundColor: 'background.default' }}>
                 <Typography variant="subtitle2" color="text.secondary">
                   Feed
@@ -388,14 +503,58 @@ function Alerts() {
                 </Typography>
               </Paper>
 
+              {/* Article info (RSS per-item) */}
+              {selectedAlert.api_metadata?.article_title && (
+                <Paper sx={{ p: 2, mb: 2, backgroundColor: '#1a237e' }}>
+                  <Typography variant="subtitle2" color="text.secondary">
+                    Source Article
+                  </Typography>
+                  <Typography variant="body1" gutterBottom fontWeight="bold">
+                    {selectedAlert.api_metadata.article_title}
+                  </Typography>
+                  {selectedAlert.api_metadata.article_link && (
+                    <Link
+                      href={selectedAlert.api_metadata.article_link}
+                      target="_blank"
+                      rel="noopener"
+                      underline="hover"
+                      color="primary"
+                      sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5 }}
+                    >
+                      <LinkIcon sx={{ fontSize: 16 }} />
+                      {selectedAlert.api_metadata.article_link}
+                      <OpenInNewIcon sx={{ fontSize: 12 }} />
+                    </Link>
+                  )}
+                  {selectedAlert.api_metadata.article_date && (
+                    <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+                      Published: {selectedAlert.api_metadata.article_date}
+                    </Typography>
+                  )}
+                </Paper>
+              )}
+
+              {/* Keywords + matched content */}
               <Paper sx={{ p: 2, mb: 2, backgroundColor: 'warning.dark' }}>
                 <Typography variant="subtitle2" color="text.secondary">
-                  Keyword
+                  Matched Keywords
                 </Typography>
-                <Typography variant="body1" gutterBottom>
-                  {selectedAlert.keyword.keyword}
-                </Typography>
-                <Typography variant="subtitle2" color="text.secondary" sx={{ mt: 2 }}>
+                <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mt: 1, mb: 2 }}>
+                  {(selectedAlert.matched_keywords && selectedAlert.matched_keywords.length > 0
+                    ? selectedAlert.matched_keywords
+                    : [{ keyword: selectedAlert.keyword.keyword, matched_text: selectedAlert.matched_content, criticality: selectedAlert.criticality }]
+                  ).map((k, i) => {
+                    const critColors = { low: '#2196f3', medium: '#ff9800', high: '#f44336', critical: '#9c27b0' };
+                    return (
+                      <Chip
+                        key={i}
+                        label={k.keyword}
+                        sx={{ backgroundColor: critColors[k.criticality] || '#ff9800', color: '#fff', fontWeight: 'bold' }}
+                      />
+                    );
+                  })}
+                </Box>
+                <Typography variant="subtitle2" color="text.secondary">
                   Matched Content
                 </Typography>
                 <Typography variant="body1" gutterBottom fontWeight="bold">
@@ -403,36 +562,54 @@ function Alerts() {
                 </Typography>
               </Paper>
 
-              {selectedAlert.api_metadata && Object.keys(selectedAlert.api_metadata).length > 0 && (
-                <Paper sx={{ p: 2, mb: 2, backgroundColor: 'info.dark' }}>
-                  <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                    Threat Intelligence Data
-                  </Typography>
-                  <Box sx={{ mt: 1 }}>
-                    {Object.entries(selectedAlert.api_metadata).map(([key, value]) => (
-                      <Box key={key} sx={{ display: 'flex', mb: 0.5 }}>
-                        <Typography variant="body2" sx={{ fontWeight: 'bold', textTransform: 'capitalize', mr: 1 }}>
-                          {key.replace(/_/g, ' ')}:
-                        </Typography>
-                        <Typography variant="body2">
-                          {value}
-                        </Typography>
-                      </Box>
-                    ))}
-                  </Box>
-                </Paper>
-              )}
-
+              {/* Context with keyword highlighting */}
               {selectedAlert.context && (
                 <Paper sx={{ p: 2, mb: 2, backgroundColor: 'background.default' }}>
                   <Typography variant="subtitle2" color="text.secondary">
                     Context
                   </Typography>
-                  <Typography variant="body2" sx={{ mt: 1 }}>
-                    {selectedAlert.context}
+                  <Typography variant="body2" sx={{ mt: 1, lineHeight: 1.6 }}>
+                    <HighlightedText
+                      text={selectedAlert.context}
+                      keywords={
+                        (selectedAlert.matched_keywords && selectedAlert.matched_keywords.length > 0)
+                          ? selectedAlert.matched_keywords.map(k => k.keyword)
+                          : [selectedAlert.keyword.keyword]
+                      }
+                    />
                   </Typography>
                 </Paper>
               )}
+
+              {/* IOC display */}
+              <IOCDisplay iocs={selectedAlert.api_metadata?.iocs} />
+
+              {/* Threat intel data (non-article, non-IOC metadata) */}
+              {selectedAlert.api_metadata && (() => {
+                const skipKeys = ['article_title', 'article_link', 'article_date', 'iocs'];
+                const otherEntries = Object.entries(selectedAlert.api_metadata)
+                  .filter(([key]) => !skipKeys.includes(key));
+                if (otherEntries.length === 0) return null;
+                return (
+                  <Paper sx={{ p: 2, mb: 2, backgroundColor: 'info.dark' }}>
+                    <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                      Threat Intelligence Data
+                    </Typography>
+                    <Box sx={{ mt: 1 }}>
+                      {otherEntries.map(([key, value]) => (
+                        <Box key={key} sx={{ display: 'flex', mb: 0.5 }}>
+                          <Typography variant="body2" sx={{ fontWeight: 'bold', textTransform: 'capitalize', mr: 1 }}>
+                            {key.replace(/_/g, ' ')}:
+                          </Typography>
+                          <Typography variant="body2">
+                            {typeof value === 'object' ? JSON.stringify(value) : String(value)}
+                          </Typography>
+                        </Box>
+                      ))}
+                    </Box>
+                  </Paper>
+                );
+              })()}
 
               <Paper sx={{ p: 2, backgroundColor: 'background.default' }}>
                 <Typography variant="subtitle2" color="text.secondary">

@@ -107,6 +107,8 @@ class Alert(Base):
     matched_content = Column(Text, nullable=False)
     context = Column(Text, nullable=True)  # Surrounding text for context
     context_hash = Column(String(64), nullable=True, index=True)  # Hash of normalized context for dedup
+    article_hash = Column(String(64), nullable=True, index=True)  # Hash of source article for grouping related alerts
+    matched_keywords = Column(JSON, default=[])  # All keyword matches: [{id, keyword, matched_text, criticality}]
     api_metadata = Column(JSON, default={})  # API metadata: victim, gang, country, industry, etc.
     criticality = Column(String(20), default="medium", nullable=False)
     triggered_at = Column(DateTime(timezone=True), server_default=func.now())
@@ -172,3 +174,15 @@ class Tag(Base):
     feeds = relationship("Feed", secondary=feed_tags, back_populates="tags")
     keywords = relationship("Keyword", secondary=keyword_tags, back_populates="tags")
     alerts = relationship("Alert", secondary=alert_tags, back_populates="tags")
+
+
+class SuppressedAlert(Base):
+    """Records dedup keys from deleted alerts so they are never re-created."""
+    __tablename__ = "suppressed_alerts"
+
+    id = Column(Integer, primary_key=True, index=True)
+    feed_id = Column(Integer, nullable=False, index=True)
+    article_hash = Column(String(64), nullable=True, index=True)
+    context_hash = Column(String(64), nullable=True, index=True)
+    keyword_id = Column(Integer, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())

@@ -1,4 +1,4 @@
-from app.models.models import Feed, Keyword, Alert, Notification, NotificationConfig, FeedType, AlertType, Criticality, Tag, APITemplate
+from app.models.models import Feed, Keyword, Alert, Notification, NotificationConfig, FeedType, AlertType, Criticality, Tag, APITemplate, SuppressedAlert
 from app.models.schemas import (
     FeedCreate, FeedUpdate, FeedResponse,
     KeywordCreate, KeywordUpdate, KeywordResponse,

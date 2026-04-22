@@ -23,7 +23,7 @@ DEFAULT_FEEDS = [
         "fetch_interval": 3600,
         "feed_metadata": {"template_id": 2}
     },
-    # RSS Feeds (3-13) - alphabetical
+    # RSS Feeds (3-16) - alphabetical
     {
         "name": "Bleeping Computer Security",
         "feed_type": "rss",
@@ -112,7 +112,31 @@ DEFAULT_FEEDS = [
         "fetch_interval": 3600,
         "feed_metadata": {}
     },
-    # Website Feeds (14-15) - alphabetical
+    {
+        "name": "International Cyber Digest",
+        "feed_type": "rss",
+        "url": "https://nitter.net/IntCyberDigest/rss",
+        "enabled": True,
+        "fetch_interval": 3600,
+        "feed_metadata": {}
+    },
+    {
+        "name": "Dark Web Intelligence",
+        "feed_type": "rss",
+        "url": "https://nitter.net/DailyDarkWeb/rss",
+        "enabled": True,
+        "fetch_interval": 3600,
+        "feed_metadata": {}
+    },
+    {
+        "name": "Defused",
+        "feed_type": "rss",
+        "url": "https://nitter.net/DefusedCyber/rss",
+        "enabled": True,
+        "fetch_interval": 3600,
+        "feed_metadata": {}
+    },
+    # Website Feeds (17-19) - alphabetical
     {
         "name": "Dark Web Informer",
         "feed_type": "website",
@@ -129,7 +153,15 @@ DEFAULT_FEEDS = [
         "fetch_interval": 3600,
         "feed_metadata": {}
     },
-    # Onion Feeds (16-20) - alphabetical
+    {
+        "name": "Infostealers.com",
+        "feed_type": "website",
+        "url": "https://www.infostealers.com/infostealer-victims/",
+        "enabled": True,
+        "fetch_interval": 3600,
+        "feed_metadata": {}
+    },
+    # Onion Feeds (20-24) - alphabetical
     {
         "name": "Coinbasecartel",
         "feed_type": "onion",

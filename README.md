@@ -10,7 +10,7 @@ A threat intelligence monitoring tool that aggregates security feeds and generat
 - Keyword matching with regex support
 - Alert notifications (email, webhook, Discord)
 - Tag-based organization
-- 20 pre-configured threat intelligence feeds
+- 24 pre-configured threat intelligence feeds
 
 **Stack**: React, FastAPI, PostgreSQL, Celery, Redis, Docker
 
@@ -67,11 +67,7 @@ The scripts will:
 
 Edit `.env`:
 ```env
-<<<<<<< HEAD
 REACT_APP_API_URL=http://YOUR_IP:8000
-=======
-REACT_APP_API_BASE_URL=http://YOUR_IP:8000
->>>>>>> 2b52af8302058dc78e373f3fc56fdfb3cac903ef
 ```
 
 Edit `backend/app/config.py`:

@@ -81,6 +81,8 @@ class AlertResponse(BaseModel):
     keyword_id: int
     matched_content: str
     context: Optional[str]
+    article_hash: Optional[str] = None
+    matched_keywords: List[Dict[str, Any]] = []
     api_metadata: Dict[str, Any] = {}
     criticality: Criticality
     triggered_at: datetime

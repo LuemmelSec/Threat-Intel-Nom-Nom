@@ -10,8 +10,9 @@ import Chip from '@mui/material/Chip';
 import Divider from '@mui/material/Divider';
 import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
-import ListItemText from '@mui/material/ListItemText';
 import CircularProgress from '@mui/material/CircularProgress';
+import Link from '@mui/material/Link';
+import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 import { statsApi, alertsApi, feedsApi } from '../api/client';
 
@@ -258,7 +259,14 @@ function Dashboard() {
             <Divider sx={{ mb: 2 }} />
             {recentAlerts.length > 0 ? (
               <List>
-                {recentAlerts.map((alert, index) => (
+                {recentAlerts.map((alert, index) => {
+                  const articleTitle = alert.api_metadata?.article_title;
+                  const articleLink = alert.api_metadata?.article_link;
+                  const mkw = alert.matched_keywords;
+                  const keywords = (mkw && mkw.length > 0)
+                    ? mkw.map(k => k.keyword)
+                    : [alert.keyword?.keyword || 'Unknown'];
+                  return (
                   <React.Fragment key={alert.id}>
                     <ListItem
                       sx={{
@@ -266,41 +274,64 @@ function Dashboard() {
                         '&:hover': { bgcolor: 'action.hover' },
                         borderRadius: 1,
                         mb: 1,
+                        flexDirection: 'column',
+                        alignItems: 'flex-start',
                       }}
                       onClick={() => navigate('/alerts')}
                     >
-                      <ListItemText
-                        primary={
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-                            <Chip
-                              label={alert.criticality?.toUpperCase() || 'MEDIUM'}
-                              size="small"
-                              sx={{
-                                backgroundColor: getCriticalityColor(alert.criticality),
-                                color: 'white',
-                                fontWeight: 'bold',
-                              }}
-                            />
+                      {/* Row 1: criticality + keywords + time */}
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, width: '100%', mb: 0.5 }}>
+                        <Chip
+                          label={alert.criticality?.toUpperCase() || 'MEDIUM'}
+                          size="small"
+                          sx={{
+                            backgroundColor: getCriticalityColor(alert.criticality),
+                            color: 'white',
+                            fontWeight: 'bold',
+                            minWidth: 70,
+                          }}
+                        />
+                        {keywords.map((kw, ki) => (
+                          <Chip key={ki} label={kw} size="small" color="primary" variant="outlined" />
+                        ))}
+                        <Typography variant="caption" color="text.secondary" sx={{ ml: 'auto', whiteSpace: 'nowrap' }}>
+                          {formatTimestamp(alert.triggered_at)}
+                        </Typography>
+                      </Box>
+                      {/* Row 2: article title with link */}
+                      {articleTitle && (
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.3 }}>
+                          {articleLink ? (
+                            <Link
+                              href={articleLink}
+                              target="_blank"
+                              rel="noopener"
+                              underline="hover"
+                              color="primary"
+                              variant="body2"
+                              sx={{ fontWeight: 500, display: 'flex', alignItems: 'center', gap: 0.3 }}
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              {articleTitle}
+                              <OpenInNewIcon sx={{ fontSize: 12 }} />
+                            </Link>
+                          ) : (
                             <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                              {alert.keyword?.keyword || 'Unknown'}
+                              {articleTitle}
                             </Typography>
-                          </Box>
-                        }
-                        secondary={
-                          <Box>
-                            <Typography variant="body2" color="text.secondary" noWrap>
-                              {alert.feed?.name || 'Unknown Feed'}
-                            </Typography>
-                            <Typography variant="caption" color="text.secondary">
-                              {formatTimestamp(alert.triggered_at)}
-                            </Typography>
-                          </Box>
-                        }
-                      />
+                          )}
+                        </Box>
+                      )}
+                      {/* Row 3: feed name */}
+                      <Typography variant="caption" color="text.secondary">
+                        {alert.feed?.name || 'Unknown Feed'}
+                        {alert.feed?.feed_type ? ` (${alert.feed.feed_type})` : ''}
+                      </Typography>
                     </ListItem>
                     {index < recentAlerts.length - 1 && <Divider />}
                   </React.Fragment>
-                ))}
+                  );
+                })}
               </List>
             ) : (
               <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 300 }}>

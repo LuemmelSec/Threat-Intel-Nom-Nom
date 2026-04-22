@@ -76,6 +76,15 @@ async def startup_event():
             conn.execute(text('CREATE INDEX IF NOT EXISTS ix_alerts_context_hash ON alerts (context_hash)'))
             conn.commit()
             logger.info("Added context_hash column to alerts table")
+        if 'article_hash' not in columns:
+            conn.execute(text('ALTER TABLE alerts ADD COLUMN article_hash VARCHAR(64)'))
+            conn.execute(text('CREATE INDEX IF NOT EXISTS ix_alerts_article_hash ON alerts (article_hash)'))
+            conn.commit()
+            logger.info("Added article_hash column to alerts table")
+        if 'matched_keywords' not in columns:
+            conn.execute(text("ALTER TABLE alerts ADD COLUMN matched_keywords JSON DEFAULT '[]'"))
+            conn.commit()
+            logger.info("Added matched_keywords column to alerts table")
     
     db = SessionLocal()
     try:

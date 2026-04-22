@@ -499,7 +499,7 @@ docker stats
 - Notification system (Email, Webhook, Discord)
 - Alert cleanup and retention management
 - Docker containerization with 7 microservices
-- Baseline configuration with 20 default feeds
+- Baseline configuration with 24 default feeds
 
 ### Future Enhancements
 - User authentication and authorization (OAuth2/JWT)
