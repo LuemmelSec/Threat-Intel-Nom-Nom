@@ -65,6 +65,18 @@ async def startup_event():
     """Run on application startup"""
     logger.info("Starting Threat Intel Nom Nom API...")
     logger.info("Database tables created/verified")
+    
+    # Add context_hash column if it doesn't exist (migration for existing databases)
+    from sqlalchemy import text, inspect
+    with engine.connect() as conn:
+        inspector = inspect(engine)
+        columns = [col['name'] for col in inspector.get_columns('alerts')]
+        if 'context_hash' not in columns:
+            conn.execute(text('ALTER TABLE alerts ADD COLUMN context_hash VARCHAR(64)'))
+            conn.execute(text('CREATE INDEX IF NOT EXISTS ix_alerts_context_hash ON alerts (context_hash)'))
+            conn.commit()
+            logger.info("Added context_hash column to alerts table")
+    
     db = SessionLocal()
     try:
         initialize_default_templates(db)

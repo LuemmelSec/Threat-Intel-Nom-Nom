@@ -1,4 +1,5 @@
 import re
+import hashlib
 from typing import List, Dict, Any
 from sqlalchemy.orm import Session
 from app.models.models import Feed, Keyword, Alert, Notification, NotificationConfig, AlertType
@@ -15,7 +16,7 @@ class KeywordMatcher:
     def find_matches(content: str, keywords: List[Keyword]) -> List[Dict[str, Any]]:
         """
         Find all keyword matches in content
-        Returns list of matches with context
+        Returns list of matches with context and context_hash for deduplication
         """
         matches = []
         
@@ -35,10 +36,12 @@ class KeywordMatcher:
                     
                     for match in pattern.finditer(content):
                         context = KeywordMatcher._extract_context(content, match.start(), match.end())
+                        context_hash = KeywordMatcher._compute_context_hash(content, match.start(), match.end())
                         matches.append({
                             "keyword": keyword,
                             "matched_text": match.group(),
                             "context": context,
+                            "context_hash": context_hash,
                             "position": match.start()
                         })
                 except re.error as e:
@@ -60,17 +63,42 @@ class KeywordMatcher:
                         position, 
                         position + len(search_keyword)
                     )
+                    context_hash = KeywordMatcher._compute_context_hash(
+                        content,
+                        position,
+                        position + len(search_keyword)
+                    )
                     
                     matches.append({
                         "keyword": keyword,
                         "matched_text": content[position:position + len(search_keyword)],
                         "context": context,
+                        "context_hash": context_hash,
                         "position": position
                     })
                     
                     position += len(search_keyword)
         
         return matches
+    
+    @staticmethod
+    def _compute_context_hash(content: str, start: int, end: int, window: int = 100) -> str:
+        """Compute a hash of the normalized text around a keyword match.
+        
+        Uses a tight window (100 chars each side) so that changes elsewhere
+        in the feed (e.g. a new RSS item added) don't alter the hash for
+        an existing keyword match.  This prevents duplicate alerts when
+        overall feed content changes but the specific match context stays
+        the same.
+        """
+        ctx_start = max(0, start - window)
+        ctx_end = min(len(content), end + window)
+        
+        snippet = content[ctx_start:ctx_end]
+        # Normalize: lowercase, collapse all whitespace to single space
+        normalized = re.sub(r'\s+', ' ', snippet.lower()).strip()
+        
+        return hashlib.sha256(normalized.encode()).hexdigest()
     
     @staticmethod
     def _extract_context(content: str, start: int, end: int, context_size: int = 200) -> str:
@@ -101,43 +129,52 @@ class AlertService:
         api_metadata: List[Dict[str, Any]] = None
     ) -> List[Alert]:
         """
-        Create alerts for matched keywords and queue notifications
-        Only creates ONE alert per keyword per feed check (deduplicates multiple occurrences)
-        api_metadata: Optional list of metadata dicts (one per content item from API feeds)
+        Create alerts for matched keywords and queue notifications.
+        
+        Deduplication strategy:
+        - Per keyword, group matches by context_hash (each unique surrounding
+          text produces one alert).
+        - Before inserting, check whether an alert with the same
+          feed_id + keyword_id + context_hash already exists in the DB.
+          If it does, skip — the match is not new.
+        - This prevents duplicate alerts when feed content changes but the
+          specific text around a keyword stays the same (e.g. a new RSS item
+          is added but the old article with the keyword is still present).
         """
         matches = KeywordMatcher.find_matches(content, keywords)
         created_alerts = []
         
         logger.info(f"Found {len(matches)} keyword matches for feed {feed.name}")
         
-        # Deduplicate: only create ONE alert per keyword (take first match)
-        keyword_matches = {}
+        # Deduplicate: one alert per keyword per feed (take first match only)
+        seen = {}  # keyword_id -> match
         for match in matches:
-            keyword_id = match["keyword"].id
-            if keyword_id not in keyword_matches:
-                keyword_matches[keyword_id] = match
+            kid = match["keyword"].id
+            if kid not in seen:
+                seen[kid] = match
         
-        for match in keyword_matches.values():
-            # Check if an alert for this keyword/feed combination already exists recently (within last hour)
-            # This prevents duplicate alerts when feed is checked multiple times simultaneously
-            from datetime import timedelta
-            one_hour_ago = datetime.utcnow() - timedelta(hours=1)
+        for keyword_id, match in seen.items():
+            context_hash = match["context_hash"]
+            
+            # Check if an alert with the same context already exists (cross-check dedup)
             existing_alert = db.query(Alert).filter(
                 Alert.feed_id == feed.id,
-                Alert.keyword_id == match["keyword"].id,
-                Alert.triggered_at >= one_hour_ago
+                Alert.keyword_id == keyword_id,
+                Alert.context_hash == context_hash
             ).first()
             
             if existing_alert:
-                continue  # Skip creating duplicate alert
+                logger.debug(
+                    f"Skipping duplicate alert for keyword '{match['keyword'].keyword}' "
+                    f"on feed {feed.name} — same context already alerted"
+                )
+                continue  # Same match in the same context — skip
             
             # Find matching metadata for this alert (if from API feed)
             alert_metadata = {}
             if api_metadata:
-                # Try to match the alert content to the source item
                 matched_text = match["matched_text"]
                 for item_meta in api_metadata:
-                    # Check if any metadata values contain the matched text
                     for value in item_meta.values():
                         if matched_text.lower() in str(value).lower():
                             alert_metadata = item_meta
@@ -145,12 +182,13 @@ class AlertService:
                     if alert_metadata:
                         break
             
-            # Create alert with criticality from keyword
+            # Create alert with context_hash for future dedup
             alert = Alert(
                 feed_id=feed.id,
                 keyword_id=match["keyword"].id,
                 matched_content=match["matched_text"],
                 context=match["context"],
+                context_hash=context_hash,
                 api_metadata=alert_metadata,
                 criticality=match["keyword"].criticality,
                 triggered_at=datetime.utcnow(),

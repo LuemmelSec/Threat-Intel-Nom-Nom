@@ -120,7 +120,9 @@ def check_feed(feed_id: int):
             content_changed = feed.last_content_hash != content_hash
             
             if content_changed:
-                # Content changed - check ALL keywords
+                # Content changed — re-scan all keywords.
+                # AlertService uses context_hash dedup so only truly NEW
+                # keyword matches (in new/changed text) generate alerts.
                 logger.info(f"Feed {feed.name} content changed - checking all keywords")
                 feed.last_content_hash = content_hash
                 
@@ -129,9 +131,11 @@ def check_feed(feed_id: int):
                     alerts = AlertService.create_alerts(db, feed, content, all_keywords, api_metadata)
                     
                     if alerts:
-                        logger.info(f"Created {len(alerts)} alerts for feed {feed.name}")
+                        logger.info(f"Created {len(alerts)} NEW alerts for feed {feed.name}")
+                    else:
+                        logger.info(f"Feed {feed.name} content changed but no new keyword contexts found")
             else:
-                # Content unchanged - check only NEW keywords created since last feed check
+                # Content unchanged — only check keywords created since last fetch
                 if previous_check_time and all_keywords:
                     new_keywords = [kw for kw in all_keywords if kw.created_at > previous_check_time]
                     

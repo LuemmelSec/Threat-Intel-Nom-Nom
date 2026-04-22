@@ -106,6 +106,7 @@ class Alert(Base):
     keyword_id = Column(Integer, ForeignKey("keywords.id", ondelete="CASCADE"), nullable=False)
     matched_content = Column(Text, nullable=False)
     context = Column(Text, nullable=True)  # Surrounding text for context
+    context_hash = Column(String(64), nullable=True, index=True)  # Hash of normalized context for dedup
     api_metadata = Column(JSON, default={})  # API metadata: victim, gang, country, industry, etc.
     criticality = Column(String(20), default="medium", nullable=False)
     triggered_at = Column(DateTime(timezone=True), server_default=func.now())

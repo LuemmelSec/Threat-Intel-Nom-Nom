@@ -110,7 +110,7 @@ services:
         condition: service_healthy
     networks:
       - darkweb_network
-    command: celery -A app.tasks.celery_app beat --loglevel=info
+    command: sh -c "celery -A app.tasks.celery_app beat --loglevel=info"
 
   tor:
     image: osminogin/tor-simple:latest
