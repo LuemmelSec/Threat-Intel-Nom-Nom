@@ -419,6 +419,13 @@ class AlertService:
 
         logger.info(f"Found {len(matches)} keyword matches for feed {feed.name}")
 
+        # For website/onion feeds the page content is dynamic — surrounding
+        # text shifts every fetch so context_hash is useless for dedup.
+        # Instead we deduplicate by feed_id + keyword_id only (one alert
+        # per keyword per feed, period).
+        # For API feeds the records are stable, so we keep context_hash.
+        is_dynamic_feed = feed.feed_type.value in ('website', 'onion')
+
         # Dedup: one alert per keyword per feed (first match only)
         seen: Dict[int, Dict] = {}
         for match in matches:
@@ -429,24 +436,38 @@ class AlertService:
         for keyword_id, match in seen.items():
             context_hash = match['context_hash']
 
-            existing = db.query(Alert).filter(
-                Alert.feed_id == feed.id,
-                Alert.keyword_id == keyword_id,
-                Alert.context_hash == context_hash,
-            ).first()
+            if is_dynamic_feed:
+                # Website/onion: dedup by feed + keyword only
+                existing = db.query(Alert).filter(
+                    Alert.feed_id == feed.id,
+                    Alert.keyword_id == keyword_id,
+                ).first()
+            else:
+                # API: dedup by feed + keyword + context_hash
+                existing = db.query(Alert).filter(
+                    Alert.feed_id == feed.id,
+                    Alert.keyword_id == keyword_id,
+                    Alert.context_hash == context_hash,
+                ).first()
             if existing:
                 logger.debug(
                     f"Skipping duplicate alert for '{match['keyword'].keyword}' "
-                    f"on feed {feed.name} — same context already alerted"
+                    f"on feed {feed.name} — already alerted"
                 )
                 continue
 
             # Check if this match was previously deleted (suppressed)
-            suppressed = db.query(SuppressedAlert).filter(
-                SuppressedAlert.feed_id == feed.id,
-                SuppressedAlert.keyword_id == keyword_id,
-                SuppressedAlert.context_hash == context_hash,
-            ).first()
+            if is_dynamic_feed:
+                suppressed = db.query(SuppressedAlert).filter(
+                    SuppressedAlert.feed_id == feed.id,
+                    SuppressedAlert.keyword_id == keyword_id,
+                ).first()
+            else:
+                suppressed = db.query(SuppressedAlert).filter(
+                    SuppressedAlert.feed_id == feed.id,
+                    SuppressedAlert.keyword_id == keyword_id,
+                    SuppressedAlert.context_hash == context_hash,
+                ).first()
             if suppressed:
                 logger.debug(
                     f"Skipping suppressed alert for '{match['keyword'].keyword}' "
