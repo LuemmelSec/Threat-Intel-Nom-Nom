@@ -4,6 +4,7 @@ services:
   postgres:
     image: postgres:15-alpine
     container_name: darkweb_postgres
+    restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-darkweb}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-darkweb_password}
@@ -23,6 +24,7 @@ services:
   redis:
     image: redis:7-alpine
     container_name: darkweb_redis
+    restart: unless-stopped
     ports:
       - "6379:6379"
     healthcheck:
@@ -38,6 +40,7 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     container_name: darkweb_backend
+    restart: unless-stopped
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-darkweb}:${POSTGRES_PASSWORD:-darkweb_password}@postgres:5432/${POSTGRES_DB:-darkweb_db}
       REDIS_URL: redis://redis:6379/0
@@ -68,6 +71,7 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     container_name: darkweb_celery
+    restart: unless-stopped
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-darkweb}:${POSTGRES_PASSWORD:-darkweb_password}@postgres:5432/${POSTGRES_DB:-darkweb_db}
       REDIS_URL: redis://redis:6379/0
@@ -110,11 +114,19 @@ services:
         condition: service_healthy
     networks:
       - darkweb_network
-    command: sh -c "celery -A app.tasks.celery_app beat --loglevel=info"
+    command: sh -c "rm -f /tmp/celerybeat.pid && celery -A app.tasks.celery_app beat --loglevel=info --pidfile=/tmp/celerybeat.pid -s /tmp/celerybeat-schedule"
+    healthcheck:
+      test: ['CMD', 'python', '-c', 'import os; os.kill(int(open("/tmp/celerybeat.pid").read().strip()), 0)']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
 
   tor:
     image: osminogin/tor-simple:latest
     container_name: darkweb_tor
+    restart: unless-stopped
     ports:
       - "9050:9050"
     networks:
@@ -125,6 +137,7 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
     container_name: darkweb_frontend
+    restart: unless-stopped
     environment:
       REACT_APP_API_URL: ${REACT_APP_API_URL:-http://localhost:8000}
     volumes:
