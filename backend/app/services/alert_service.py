@@ -297,11 +297,26 @@ class AlertService:
                 f"{feed.id}:{article_key}".encode()
             ).hexdigest()
 
+            # Content-based hash as a fallback dedup key.
+            # RSS feeds sometimes change article URLs between scans
+            # (tracking params, trailing slashes, etc.) so article_hash
+            # alone is not reliable.  context_hash catches that.
+            normalized = re.sub(r'\s+', ' ', entry_content.lower()).strip()
+            context_hash = hashlib.sha256(
+                normalized[:200].encode()
+            ).hexdigest()
+
             # Check if we already have an alert for this article on this feed
+            # Try article_hash first, then context_hash as fallback
             existing = db.query(Alert).filter(
                 Alert.feed_id == feed.id,
                 Alert.article_hash == article_hash,
             ).first()
+            if not existing:
+                existing = db.query(Alert).filter(
+                    Alert.feed_id == feed.id,
+                    Alert.context_hash == context_hash,
+                ).first()
             if existing:
                 logger.debug(
                     f"Skipping article '{entry.get('title', '')[:60]}' "
@@ -314,6 +329,11 @@ class AlertService:
                 SuppressedAlert.feed_id == feed.id,
                 SuppressedAlert.article_hash == article_hash,
             ).first()
+            if not suppressed:
+                suppressed = db.query(SuppressedAlert).filter(
+                    SuppressedAlert.feed_id == feed.id,
+                    SuppressedAlert.context_hash == context_hash,
+                ).first()
             if suppressed:
                 logger.debug(
                     f"Skipping suppressed article '{entry.get('title', '')[:60]}' "
@@ -371,9 +391,7 @@ class AlertService:
             if len(context) > 500:
                 context = context[:500] + '...'
 
-            # Compute context_hash from the article content for dedup
-            normalized = re.sub(r'\s+', ' ', entry_content.lower()).strip()
-            context_hash = hashlib.sha256(normalized[:200].encode()).hexdigest()
+            # context_hash already computed above for dedup
 
             alert = Alert(
                 feed_id=feed.id,

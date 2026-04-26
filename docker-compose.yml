@@ -93,35 +93,13 @@ services:
         condition: service_started
     networks:
       - darkweb_network
-    command: celery -A app.tasks.celery_app worker --loglevel=info
-
-  celery_beat:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    container_name: darkweb_celery_beat
-    environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-darkweb}:${POSTGRES_PASSWORD:-darkweb_password}@postgres:5432/${POSTGRES_DB:-darkweb_db}
-      REDIS_URL: redis://redis:6379/0
-      SECRET_KEY: ${SECRET_KEY:-your-secret-key-change-this}
-      TOR_PROXY: ${TOR_PROXY:-socks5h://tor:9050}
-    volumes:
-      - ./backend:/app
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    networks:
-      - darkweb_network
-    command: sh -c "rm -f /tmp/celerybeat.pid && celery -A app.tasks.celery_app beat --loglevel=info --pidfile=/tmp/celerybeat.pid -s /tmp/celerybeat-schedule"
+    command: celery -A app.tasks.celery_app worker -B --loglevel=info --pidfile=/tmp/celerybeat.pid -s /tmp/celerybeat-schedule
     healthcheck:
-      test: ['CMD', 'python', '-c', 'import os; os.kill(int(open("/tmp/celerybeat.pid").read().strip()), 0)']
-      interval: 30s
-      timeout: 10s
+      test: ["CMD-SHELL", "celery -A app.tasks.celery_app inspect ping --timeout 10 2>/dev/null | grep -q OK"]
+      interval: 60s
+      timeout: 15s
       retries: 3
       start_period: 30s
-    restart: unless-stopped
 
   tor:
     image: osminogin/tor-simple:latest

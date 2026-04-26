@@ -176,10 +176,10 @@ function Dashboard() {
           >
             <CardContent>
               <Typography color="white" variant="h3">
-                {stats?.healthy_feeds || 0}/{stats?.total_feeds || 0}
+                {stats?.healthy_feeds || 0}/{stats?.active_feeds || 0}
               </Typography>
               <Typography color="white" variant="body2">
-                Healthy Feeds
+                Healthy Active Feeds
               </Typography>
             </CardContent>
           </Card>
