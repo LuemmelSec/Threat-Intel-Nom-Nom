@@ -80,17 +80,28 @@ def check_feed(feed_id: int):
         
         # For API feeds, load template configuration
         metadata = feed.feed_metadata or {}
-        if feed.feed_type.value == "api" and metadata.get('template_id'):
+        if feed.feed_type.value == "api":
             from app.models.models import APITemplate
-            template = db.query(APITemplate).filter(
-                APITemplate.id == metadata['template_id'],
-                APITemplate.enabled == True
-            ).first()
+            template = None
+
+            # Resolve by template_id first, then by template_name
+            if metadata.get('template_id'):
+                template = db.query(APITemplate).filter(
+                    APITemplate.id == metadata['template_id'],
+                    APITemplate.enabled == True
+                ).first()
+            if not template and metadata.get('template_name'):
+                template = db.query(APITemplate).filter(
+                    APITemplate.name == metadata['template_name'],
+                    APITemplate.enabled == True
+                ).first()
+
             if template:
                 # Merge template configuration into metadata
                 metadata = {**metadata, 'configuration': template.configuration}
             else:
-                logger.error(f"API template {metadata['template_id']} not found or disabled for feed {feed.name}")
+                tmpl_ref = metadata.get('template_id') or metadata.get('template_name', '?')
+                logger.error(f"API template {tmpl_ref} not found or disabled for feed {feed.name}")
                 return
         
         # Fetch feed content

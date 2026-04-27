@@ -6,14 +6,14 @@ from app.models.models import Feed, APITemplate, Tag, FeedType
 logger = logging.getLogger(__name__)
 
 DEFAULT_FEEDS = [
-    # API Feeds (1-2)
+    # API Feeds (1-3)
     {
         "name": "Ransomfeed.it",
         "feed_type": "api",
         "url": "https://api.ransomfeed.it/",
         "enabled": True,
         "fetch_interval": 3600,
-        "feed_metadata": {"template_id": 1}
+        "feed_metadata": {"template_name": "RansomFeed.it"}
     },
     {
         "name": "RansomLook API Recent",
@@ -21,9 +21,17 @@ DEFAULT_FEEDS = [
         "url": "https://www.ransomlook.io/api/recent",
         "enabled": True,
         "fetch_interval": 3600,
-        "feed_metadata": {"template_id": 2}
+        "feed_metadata": {"template_name": "RansomLook Recent"}
     },
-    # RSS Feeds (3-16) - alphabetical
+    {
+        "name": "CISA KEV",
+        "feed_type": "api",
+        "url": "https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json",
+        "enabled": True,
+        "fetch_interval": 3600,
+        "feed_metadata": {"template_name": "CISA KEV"}
+    },
+    # RSS Feeds (4-17) - alphabetical
     {
         "name": "Bleeping Computer Security",
         "feed_type": "rss",
@@ -227,6 +235,11 @@ def initialize_default_feeds(db: Session) -> None:
         # Get existing feed URLs
         existing_urls = {feed.url for feed in db.query(Feed).all()}
         
+        # Build template name -> id lookup for API feeds
+        template_lookup = {
+            t.name: t.id for t in db.query(APITemplate).all()
+        }
+
         # Add missing default feeds
         added = 0
         new_feeds = []
@@ -234,7 +247,19 @@ def initialize_default_feeds(db: Session) -> None:
             if feed_data["url"] in existing_urls:
                 continue
             
-            feed = Feed(**feed_data)
+            # Resolve template_name to template_id for API feeds
+            data = dict(feed_data)
+            meta = dict(data.get("feed_metadata", {}))
+            if "template_name" in meta:
+                tname = meta.pop("template_name")
+                tid = template_lookup.get(tname)
+                if tid:
+                    meta["template_id"] = tid
+                else:
+                    logger.warning(f"API template '{tname}' not found for feed '{data['name']}'")
+                data["feed_metadata"] = meta
+
+            feed = Feed(**data)
             db.add(feed)
             new_feeds.append(feed)
             added += 1
@@ -357,6 +382,43 @@ DEFAULT_API_TEMPLATES = [
             },
             "incremental_update": {
                 "enabled": False
+            }
+        },
+        "is_system": True,
+        "enabled": True
+    },
+    {
+        "name": "CISA KEV",
+        "description": "CISA Known Exploited Vulnerabilities catalog – actively exploited CVEs with remediation deadlines",
+        "configuration": {
+            "endpoint": "https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json",
+            "method": "GET",
+            "headers": {
+                "User-Agent": "ThreatAlert/1.0"
+            },
+            "auth": {
+                "type": "none"
+            },
+            "response_format": "json",
+            "data_path": "vulnerabilities",
+            "field_mapping": {
+                "content_fields": ["cveID", "vendorProject", "product", "vulnerabilityName", "shortDescription"],
+                "metadata_fields": {
+                    "cve_id": "cveID",
+                    "vendor": "vendorProject",
+                    "product": "product",
+                    "vulnerability_name": "vulnerabilityName",
+                    "description": "shortDescription",
+                    "date_added": "dateAdded",
+                    "due_date": "dueDate",
+                    "ransomware_use": "knownRansomwareCampaignUse",
+                    "required_action": "requiredAction",
+                    "notes": "notes"
+                }
+            },
+            "incremental_update": {
+                "enabled": True,
+                "id_field": "cveID"
             }
         },
         "is_system": True,
