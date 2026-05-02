@@ -176,6 +176,99 @@ class NotificationSender:
             }
     
     @staticmethod
+    async def send_teams(webhook_url: str, alert: Alert, db: Session) -> Dict[str, Any]:
+        """Send Microsoft Teams webhook notification using Adaptive Card format with @mention"""
+        try:
+            matched_text = alert.matched_content[:500] if alert.matched_content else "N/A"
+            context_text = ""
+            if alert.context:
+                context_text = alert.context[:1000] + ("..." if len(alert.context) > 1000 else "")
+
+            # Build Adaptive Card body
+            body = [
+                {
+                    "type": "TextBlock",
+                    "size": "large",
+                    "weight": "bolder",
+                    "color": "attention",
+                    "text": "\U0001f6a8 Threat Intel Alert"
+                },
+                {
+                    "type": "TextBlock",
+                    "text": f"Keyword **{alert.keyword.keyword}** detected!",
+                    "wrap": True
+                },
+                {
+                    "type": "FactSet",
+                    "facts": [
+                        {"title": "Keyword", "value": alert.keyword.keyword},
+                        {"title": "Feed", "value": f"{alert.feed.name} ({alert.feed.feed_type.value})"},
+                        {"title": "URL", "value": alert.feed.url},
+                        {"title": "Triggered", "value": alert.triggered_at.strftime('%Y-%m-%d %H:%M:%S UTC')},
+                    ]
+                },
+                {
+                    "type": "TextBlock",
+                    "text": "**Matched Content**",
+                    "weight": "bolder",
+                    "spacing": "medium"
+                },
+                {
+                    "type": "TextBlock",
+                    "text": matched_text,
+                    "wrap": True
+                },
+            ]
+
+            # Add context block if available
+            if context_text:
+                body.append({
+                    "type": "TextBlock",
+                    "text": "**Context**",
+                    "weight": "bolder",
+                    "spacing": "medium"
+                })
+                body.append({
+                    "type": "TextBlock",
+                    "text": context_text,
+                    "wrap": True
+                })
+
+            payload = {
+                "type": "message",
+                "attachments": [
+                    {
+                        "contentType": "application/vnd.microsoft.card.adaptive",
+                        "contentUrl": None,
+                        "content": {
+                            "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+                            "type": "AdaptiveCard",
+                            "version": "1.4",
+                            "body": body
+                        }
+                    }
+                ]
+            }
+
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                response = await client.post(
+                    webhook_url,
+                    json=payload,
+                    headers={"Content-Type": "application/json"}
+                )
+                response.raise_for_status()
+
+            return {
+                "success": True,
+                "message": "Teams notification sent successfully"
+            }
+        except Exception as e:
+            return {
+                "success": False,
+                "error": str(e)
+            }
+
+    @staticmethod
     async def send_notification(
         notification_type: AlertType,
         destination: str,
@@ -189,6 +282,8 @@ class NotificationSender:
             return await NotificationSender.send_email(destination, alert, db)
         elif notification_type == AlertType.DISCORD:
             return await NotificationSender.send_discord(destination, alert, db)
+        elif notification_type == AlertType.TEAMS:
+            return await NotificationSender.send_teams(destination, alert, db)
         else:
             return {
                 "success": False,

@@ -44,6 +44,7 @@ class KeywordBase(BaseModel):
     keyword: str
     case_sensitive: bool = False
     regex_pattern: bool = False
+    whole_word: bool = True
     enabled: bool = True
     criticality: Criticality = Criticality.MEDIUM
 
@@ -56,6 +57,7 @@ class KeywordUpdate(BaseModel):
     keyword: Optional[str] = None
     case_sensitive: Optional[bool] = None
     regex_pattern: Optional[bool] = None
+    whole_word: Optional[bool] = None
     enabled: Optional[bool] = None
     criticality: Optional[Criticality] = None
 

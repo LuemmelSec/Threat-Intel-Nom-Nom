@@ -17,6 +17,7 @@ class AlertType(str, enum.Enum):
     WEBHOOK = "webhook"
     EMAIL = "email"
     DISCORD = "discord"
+    TEAMS = "teams"
 
 
 class Criticality(str, enum.Enum):
@@ -88,6 +89,7 @@ class Keyword(Base):
     keyword = Column(String(255), nullable=False, unique=True, index=True)
     case_sensitive = Column(Boolean, default=False)
     regex_pattern = Column(Boolean, default=False)
+    whole_word = Column(Boolean, default=True)
     enabled = Column(Boolean, default=True)
     criticality = Column(String(20), default="medium", nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())

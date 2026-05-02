@@ -13,7 +13,7 @@ import ListItem from '@mui/material/ListItem';
 import CircularProgress from '@mui/material/CircularProgress';
 import Link from '@mui/material/Link';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, Cell } from 'recharts';
 import { statsApi, alertsApi, feedsApi } from '../api/client';
 
 // Color scheme for criticality levels
@@ -28,7 +28,7 @@ function Dashboard() {
   const navigate = useNavigate();
   const [stats, setStats] = useState(null);
   const [recentAlerts, setRecentAlerts] = useState([]);
-  const [criticalityData, setCriticalityData] = useState([]);
+  const [keywordData, setKeywordData] = useState([]);
   const [recentFeeds, setRecentFeeds] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -48,31 +48,31 @@ function Dashboard() {
       const alertsResponse = await alertsApi.getAll({ limit: 5 });
       setRecentAlerts(alertsResponse.data);
 
-      // Calculate criticality distribution
+      // Calculate alerts per keyword
       const allAlertsResponse = await alertsApi.getAll({ limit: 1000 });
-      const criticalityCounts = {
-        low: 0,
-        medium: 0,
-        high: 0,
-        critical: 0,
-      };
+      const keywordCounts = {};
 
       allAlertsResponse.data.forEach(alert => {
-        const level = alert.criticality?.toLowerCase() || 'medium';
-        if (criticalityCounts.hasOwnProperty(level)) {
-          criticalityCounts[level]++;
+        // matched_keywords is an array of {keyword, ...} objects
+        const keywords = alert.matched_keywords || [];
+        if (keywords.length > 0) {
+          keywords.forEach(kw => {
+            const name = kw.keyword || 'unknown';
+            keywordCounts[name] = (keywordCounts[name] || 0) + 1;
+          });
+        } else {
+          // fallback to matched_content
+          const name = alert.matched_content || 'unknown';
+          keywordCounts[name] = (keywordCounts[name] || 0) + 1;
         }
       });
 
-      const chartData = Object.entries(criticalityCounts)
-        .filter(([_, count]) => count > 0)
-        .map(([name, value]) => ({
-          name: name.charAt(0).toUpperCase() + name.slice(1),
-          value,
-          color: CRITICALITY_COLORS[name],
-        }));
+      const kwData = Object.entries(keywordCounts)
+        .map(([name, value]) => ({ name, value }))
+        .sort((a, b) => b.value - a.value)
+        .slice(0, 10);
 
-      setCriticalityData(chartData);
+      setKeywordData(kwData);
 
       // Fetch recent feeds
       const feedsResponse = await feedsApi.getAll({ limit: 100 });
@@ -207,38 +207,28 @@ function Dashboard() {
       </Grid>
 
       <Grid container spacing={3}>
-        {/* Alerts by Criticality - Pie Chart */}
+        {/* Top Keywords by Alerts */}
         <Grid item xs={12} md={6}>
           <Paper sx={{ p: 3, height: '400px' }}>
             <Typography variant="h6" gutterBottom>
-              Alerts by Criticality
+              Top Keywords by Alerts
             </Typography>
             <Divider sx={{ mb: 2 }} />
-            {criticalityData.length > 0 ? (
+            {keywordData.length > 0 ? (
               <ResponsiveContainer width="100%" height={300}>
-                <PieChart>
-                  <Pie
-                    data={criticalityData}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                    outerRadius={80}
-                    fill="#8884d8"
-                    dataKey="value"
-                    onClick={(data) => {
-                      const criticality = data.name.toLowerCase();
-                      navigate(`/alerts?criticality=${criticality}`);
-                    }}
-                    style={{ cursor: 'pointer' }}
-                  >
-                    {criticalityData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
+                <BarChart data={keywordData} layout="vertical" margin={{ left: 10, right: 30 }}>
+                  <XAxis type="number" allowDecimals={false} />
+                  <YAxis type="category" dataKey="name" width={120} tick={{ fontSize: 12 }} />
                   <Tooltip />
-                  <Legend />
-                </PieChart>
+                  <Bar dataKey="value" name="Alerts" radius={[0, 4, 4, 0]}>
+                    {keywordData.map((_, index) => (
+                      <Cell key={`cell-${index}`} fill={[
+                        '#1e88e5', '#43a047', '#fb8c00', '#e53935', '#8e24aa',
+                        '#00acc1', '#7cb342', '#f4511e', '#6d4c41', '#546e7a'
+                      ][index % 10]} />
+                    ))}
+                  </Bar>
+                </BarChart>
               </ResponsiveContainer>
             ) : (
               <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 300 }}>

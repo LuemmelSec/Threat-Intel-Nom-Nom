@@ -17,6 +17,7 @@ import Select from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
 import Paper from '@mui/material/Paper';
 import Toolbar from '@mui/material/Toolbar';
+import Tooltip from '@mui/material/Tooltip';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
@@ -43,6 +44,7 @@ function Keywords() {
     keyword: '',
     case_sensitive: false,
     regex_pattern: false,
+    whole_word: true,
     enabled: true,
     criticality: 'medium',
   });
@@ -69,6 +71,7 @@ function Keywords() {
         keyword: keyword.keyword,
         case_sensitive: keyword.case_sensitive,
         regex_pattern: keyword.regex_pattern,
+        whole_word: keyword.whole_word !== false,
         enabled: keyword.enabled,
         criticality: keyword.criticality || 'medium',
       });
@@ -79,6 +82,7 @@ function Keywords() {
         keyword: '',
         case_sensitive: false,
         regex_pattern: false,
+        whole_word: true,
         enabled: true,
         criticality: 'medium',
       });
@@ -220,6 +224,18 @@ function Keywords() {
           label={params.value ? 'Yes' : 'No'}
           size="small"
           color={params.value ? 'secondary' : 'default'}
+        />
+      ),
+    },
+    {
+      field: 'whole_word',
+      headerName: 'Whole Word',
+      width: 120,
+      renderCell: (params) => (
+        <Chip
+          label={params.value !== false ? 'Yes' : 'No'}
+          size="small"
+          color={params.value !== false ? 'info' : 'default'}
         />
       ),
     },
@@ -447,33 +463,51 @@ function Keywords() {
             <MenuItem value="high">High</MenuItem>
             <MenuItem value="critical">Critical</MenuItem>
           </TextField>
-          <FormControlLabel
-            control={
-              <Switch
-                checked={formData.case_sensitive}
-                onChange={(e) => setFormData({ ...formData, case_sensitive: e.target.checked })}
-              />
-            }
-            label="Case Sensitive"
-          />
-          <FormControlLabel
-            control={
-              <Switch
-                checked={formData.regex_pattern}
-                onChange={(e) => setFormData({ ...formData, regex_pattern: e.target.checked })}
-              />
-            }
-            label="Regex Pattern"
-          />
-          <FormControlLabel
-            control={
-              <Switch
-                checked={formData.enabled}
-                onChange={(e) => setFormData({ ...formData, enabled: e.target.checked })}
-              />
-            }
-            label="Enabled"
-          />
+          <Tooltip title="When enabled, matching is case-sensitive (e.g. 'APT' won't match 'apt'). When disabled, matches regardless of upper/lowercase." arrow placement="right">
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={formData.case_sensitive}
+                  onChange={(e) => setFormData({ ...formData, case_sensitive: e.target.checked })}
+                />
+              }
+              label="Case Sensitive"
+            />
+          </Tooltip>
+          <Tooltip title="When enabled, the keyword is treated as a regular expression (e.g. '(zero|0)[\s\-]?days?' matches zero-day, 0day, 0-days, etc). When disabled, it's matched as plain text." arrow placement="right">
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={formData.regex_pattern}
+                  onChange={(e) => setFormData({ ...formData, regex_pattern: e.target.checked, ...(e.target.checked ? { whole_word: false } : {}) })}
+                />
+              }
+              label="Regex Pattern"
+            />
+          </Tooltip>
+          <Tooltip title="When enabled, only matches the keyword as a complete word (e.g. 'mal' won't match 'malware' or 'animal'). Disabled automatically when Regex is on — use \b word boundaries in your regex instead." arrow placement="right">
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={formData.whole_word}
+                  onChange={(e) => setFormData({ ...formData, whole_word: e.target.checked })}
+                  disabled={formData.regex_pattern}
+                />
+              }
+              label="Whole Word Match"
+            />
+          </Tooltip>
+          <Tooltip title="When disabled, this keyword is ignored during feed scanning. Useful for temporarily pausing a keyword without deleting it." arrow placement="right">
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={formData.enabled}
+                  onChange={(e) => setFormData({ ...formData, enabled: e.target.checked })}
+                />
+              }
+              label="Enabled"
+            />
+          </Tooltip>
           <Box sx={{ mt: 2 }}>
             <TagSelector
               selectedTags={selectedTags}

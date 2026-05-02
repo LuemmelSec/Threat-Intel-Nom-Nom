@@ -85,6 +85,21 @@ async def startup_event():
             conn.execute(text("ALTER TABLE alerts ADD COLUMN matched_keywords JSON DEFAULT '[]'"))
             conn.commit()
             logger.info("Added matched_keywords column to alerts table")
+        
+        # Add whole_word column to keywords table
+        kw_columns = [col['name'] for col in inspector.get_columns('keywords')]
+        if 'whole_word' not in kw_columns:
+            conn.execute(text('ALTER TABLE keywords ADD COLUMN whole_word BOOLEAN DEFAULT TRUE'))
+            conn.commit()
+            logger.info("Added whole_word column to keywords table (default: true)")
+        
+        # Add 'TEAMS' value to alerttype enum if it doesn't exist
+        result = conn.execute(text("SELECT EXISTS(SELECT 1 FROM pg_enum WHERE enumlabel = 'TEAMS' AND enumtypid = (SELECT oid FROM pg_type WHERE typname = 'alerttype'))"))
+        teams_exists = result.scalar()
+        if not teams_exists:
+            conn.execute(text("ALTER TYPE alerttype ADD VALUE IF NOT EXISTS 'TEAMS'"))
+            conn.commit()
+            logger.info("Added 'TEAMS' value to alerttype enum")
     
     db = SessionLocal()
     try:

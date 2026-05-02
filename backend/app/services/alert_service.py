@@ -154,36 +154,53 @@ class KeywordMatcher:
                     # Invalid regex pattern
                     continue
             else:
-                # Simple text search
-                search_content = content if keyword.case_sensitive else content.lower()
-                search_keyword = keyword_text if keyword.case_sensitive else keyword_text.lower()
-                
-                position = 0
-                while True:
-                    position = search_content.find(search_keyword, position)
-                    if position == -1:
-                        break
+                # Simple text search — use word boundaries if whole_word is enabled
+                use_whole_word = getattr(keyword, 'whole_word', True)
+                if use_whole_word:
+                    flags = 0 if keyword.case_sensitive else re.IGNORECASE
+                    escaped = re.escape(keyword_text)
+                    pattern = re.compile(r'\b' + escaped + r'\b', flags)
+                    for match in pattern.finditer(content):
+                        context = KeywordMatcher._extract_context(content, match.start(), match.end())
+                        context_hash = KeywordMatcher._compute_context_hash(content, match.start(), match.end())
+                        matches.append({
+                            "keyword": keyword,
+                            "matched_text": match.group(),
+                            "context": context,
+                            "context_hash": context_hash,
+                            "position": match.start()
+                        })
+                else:
+                    # Substring search (legacy behavior)
+                    search_content = content if keyword.case_sensitive else content.lower()
+                    search_keyword = keyword_text if keyword.case_sensitive else keyword_text.lower()
                     
-                    context = KeywordMatcher._extract_context(
-                        content, 
-                        position, 
-                        position + len(search_keyword)
-                    )
-                    context_hash = KeywordMatcher._compute_context_hash(
-                        content,
-                        position,
-                        position + len(search_keyword)
-                    )
-                    
-                    matches.append({
-                        "keyword": keyword,
-                        "matched_text": content[position:position + len(search_keyword)],
-                        "context": context,
-                        "context_hash": context_hash,
-                        "position": position
-                    })
-                    
-                    position += len(search_keyword)
+                    position = 0
+                    while True:
+                        position = search_content.find(search_keyword, position)
+                        if position == -1:
+                            break
+                        
+                        context = KeywordMatcher._extract_context(
+                            content, 
+                            position, 
+                            position + len(search_keyword)
+                        )
+                        context_hash = KeywordMatcher._compute_context_hash(
+                            content,
+                            position,
+                            position + len(search_keyword)
+                        )
+                        
+                        matches.append({
+                            "keyword": keyword,
+                            "matched_text": content[position:position + len(search_keyword)],
+                            "context": context,
+                            "context_hash": context_hash,
+                            "position": position
+                        })
+                        
+                        position += len(search_keyword)
         
         return matches
     

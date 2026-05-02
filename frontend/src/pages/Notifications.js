@@ -22,6 +22,7 @@ const NOTIFICATION_TYPES = [
   { value: 'webhook', label: 'Webhook' },
   { value: 'email', label: 'Email' },
   { value: 'discord', label: 'Discord' },
+  { value: 'teams', label: 'Microsoft Teams' },
 ];
 
 function Notifications() {
@@ -111,6 +112,8 @@ function Notifications() {
         return 'Enter webhook URL (e.g., https://api.example.com/webhook)';
       case 'discord':
         return 'Enter Discord webhook URL';
+      case 'teams':
+        return 'Enter Microsoft Teams webhook URL';
       default:
         return 'Enter destination';
     }
