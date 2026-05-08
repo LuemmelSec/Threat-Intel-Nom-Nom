@@ -47,6 +47,7 @@ def create_keyword(keyword: KeywordCreate, db: Session = Depends(get_db)):
         )
     
     db_keyword = Keyword(
+        name=keyword.name,
         keyword=keyword.keyword,
         case_sensitive=keyword.case_sensitive,
         regex_pattern=keyword.regex_pattern,

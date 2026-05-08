@@ -380,6 +380,7 @@ class AlertService:
                 crit = kw.criticality or 'medium'
                 keyword_list.append({
                     'id': kw.id,
+                    'name': kw.name or kw.keyword,
                     'keyword': kw.keyword,
                     'matched_text': match['matched_text'],
                     'criticality': crit,

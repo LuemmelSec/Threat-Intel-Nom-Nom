@@ -41,6 +41,7 @@ class FeedResponse(FeedBase):
 
 # Keyword Schemas
 class KeywordBase(BaseModel):
+    name: Optional[str] = None
     keyword: str
     case_sensitive: bool = False
     regex_pattern: bool = False
@@ -54,6 +55,7 @@ class KeywordCreate(KeywordBase):
 
 
 class KeywordUpdate(BaseModel):
+    name: Optional[str] = None
     keyword: Optional[str] = None
     case_sensitive: Optional[bool] = None
     regex_pattern: Optional[bool] = None

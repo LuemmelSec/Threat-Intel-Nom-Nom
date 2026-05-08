@@ -27,6 +27,7 @@ class NotificationSender:
                 },
                 "keyword": {
                     "id": alert.keyword.id,
+                    "name": alert.keyword.name or alert.keyword.keyword,
                     "keyword": alert.keyword.keyword
                 },
                 "matched_content": alert.matched_content,
@@ -60,7 +61,7 @@ class NotificationSender:
             
             # Create message
             message = MIMEMultipart("alternative")
-            message["Subject"] = f"Dark Web Alert: Keyword '{alert.keyword.keyword}' detected"
+            message["Subject"] = f"Dark Web Alert: Keyword '{alert.keyword.name or alert.keyword.keyword}' detected"
             message["From"] = settings.SMTP_FROM
             message["To"] = to_email
             
@@ -71,7 +72,7 @@ class NotificationSender:
                     <h2 style="color: #dc3545;">🚨 Dark Web Alert Triggered</h2>
                     <div style="background-color: #f8f9fa; padding: 15px; border-left: 4px solid #dc3545; margin: 10px 0;">
                         <h3>Alert Details</h3>
-                        <p><strong>Keyword:</strong> {alert.keyword.keyword}</p>
+                        <p><strong>Keyword:</strong> {alert.keyword.name or alert.keyword.keyword}</p>
                         <p><strong>Feed:</strong> {alert.feed.name} ({alert.feed.feed_type.value})</p>
                         <p><strong>URL:</strong> {alert.feed.url}</p>
                         <p><strong>Triggered:</strong> {alert.triggered_at.strftime('%Y-%m-%d %H:%M:%S UTC')}</p>
@@ -125,7 +126,7 @@ class NotificationSender:
             embed = DiscordEmbed(
                 title="🚨 Dark Web Alert Triggered",
                 color='dc3545',
-                description=f"Keyword **{alert.keyword.keyword}** detected"
+                description=f"Keyword **{alert.keyword.name or alert.keyword.keyword}** detected"
             )
             
             embed.add_embed_field(
@@ -195,13 +196,13 @@ class NotificationSender:
                 },
                 {
                     "type": "TextBlock",
-                    "text": f"Keyword **{alert.keyword.keyword}** detected!",
+                    "text": f"Keyword **{alert.keyword.name or alert.keyword.keyword}** detected!",
                     "wrap": True
                 },
                 {
                     "type": "FactSet",
                     "facts": [
-                        {"title": "Keyword", "value": alert.keyword.keyword},
+                        {"title": "Keyword", "value": alert.keyword.name or alert.keyword.keyword},
                         {"title": "Feed", "value": f"{alert.feed.name} ({alert.feed.feed_type.value})"},
                         {"title": "URL", "value": alert.feed.url},
                         {"title": "Triggered", "value": alert.triggered_at.strftime('%Y-%m-%d %H:%M:%S UTC')},

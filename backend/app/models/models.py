@@ -86,6 +86,7 @@ class Keyword(Base):
     __tablename__ = "keywords"
     
     id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(255), nullable=True)  # Human-readable display name
     keyword = Column(String(255), nullable=False, unique=True, index=True)
     case_sensitive = Column(Boolean, default=False)
     regex_pattern = Column(Boolean, default=False)

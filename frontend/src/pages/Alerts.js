@@ -25,7 +25,7 @@ import VisibilityIcon from '@mui/icons-material/Visibility';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import LinkIcon from '@mui/icons-material/Link';
 import { DataGrid } from '@mui/x-data-grid';
-import { alertsApi } from '../api/client';
+import { alertsApi, keywordsApi } from '../api/client';
 import TagDisplay from '../components/TagDisplay';
 import TagSelector from '../components/TagSelector';
 import axios from 'axios';
@@ -43,15 +43,17 @@ function HighlightedText({ text, keywords }) {
   const parts = text.split(regex);
   return (
     <>
-      {parts.map((part, i) =>
-        regex.test(part) ? (
+      {parts.map((part, i) => {
+        // Use a fresh test each time (no stateful lastIndex issue)
+        const isMatch = new RegExp(`^(${escaped.join('|')})$`, 'i').test(part);
+        return isMatch ? (
           <mark key={i} style={{ backgroundColor: '#ffe082', color: '#000', padding: '0 2px', borderRadius: 2 }}>
             {part}
           </mark>
         ) : (
           <span key={i}>{part}</span>
-        )
-      )}
+        );
+      })}
     </>
   );
 }
@@ -117,6 +119,7 @@ function Alerts() {
   const [statusFilter, setStatusFilter] = useState(searchParams.get('status') || 'all');
   const [criticalityFilter, setCriticalityFilter] = useState(searchParams.get('criticality') || 'all');
   const [selectedRows, setSelectedRows] = useState([]);
+  const [kwLookup, setKwLookup] = useState({});
 
   useEffect(() => {
     // Update filters from URL params
@@ -134,8 +137,11 @@ function Alerts() {
 
   const fetchAlerts = async () => {
     try {
-      const response = await alertsApi.getAll();
-      setAlerts(response.data);
+      const [alertRes, kwRes] = await Promise.all([alertsApi.getAll(), keywordsApi.getAll()]);
+      setAlerts(alertRes.data);
+      const lookup = {};
+      kwRes.data.forEach(k => { lookup[k.id] = k.name || k.keyword; });
+      setKwLookup(lookup);
       setLoading(false);
     } catch (error) {
       console.error('Error fetching alerts:', error);
@@ -237,8 +243,8 @@ function Alerts() {
       width: 180,
       valueGetter: (params) => {
         const mkw = params.row.matched_keywords;
-        if (mkw && mkw.length > 0) return mkw.map(k => k.keyword).join(', ');
-        return params.row.keyword?.keyword || '';
+        if (mkw && mkw.length > 0) return mkw.map(k => kwLookup[k.id] || k.name || k.keyword).join(', ');
+        return kwLookup[params.row.keyword?.id] || params.row.keyword?.name || params.row.keyword?.keyword || '';
       },
       renderCell: (params) => {
         const mkw = params.row.matched_keywords;
@@ -246,13 +252,13 @@ function Alerts() {
           return (
             <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', alignItems: 'center' }}>
               {mkw.map((k, i) => (
-                <Chip key={i} label={k.keyword} size="small" color="primary" variant="outlined" />
+                <Chip key={i} label={kwLookup[k.id] || k.name || k.keyword} size="small" color="primary" variant="outlined" />
               ))}
             </Box>
           );
         }
-        if (mkw && mkw.length === 1) return mkw[0].keyword;
-        return params.row.keyword?.keyword || '';
+        if (mkw && mkw.length === 1) return kwLookup[mkw[0].id] || mkw[0].name || mkw[0].keyword;
+        return kwLookup[params.row.keyword?.id] || params.row.keyword?.name || params.row.keyword?.keyword || '';
       },
     },
     {
@@ -364,10 +370,10 @@ function Alerts() {
 
   const filteredAlerts = alerts.filter(alert => {
     const articleTitle = alert.api_metadata?.article_title || '';
-    const mkwText = (alert.matched_keywords || []).map(k => k.keyword).join(' ');
+    const mkwText = (alert.matched_keywords || []).map(k => kwLookup[k.id] || k.name || k.keyword).join(' ');
     const searchText = filterText.toLowerCase();
     const matchesText = alert.feed.name.toLowerCase().includes(searchText) ||
-      alert.keyword.keyword.toLowerCase().includes(searchText) ||
+      (kwLookup[alert.keyword?.id] || alert.keyword.name || alert.keyword.keyword).toLowerCase().includes(searchText) ||
       alert.matched_content.toLowerCase().includes(searchText) ||
       articleTitle.toLowerCase().includes(searchText) ||
       mkwText.toLowerCase().includes(searchText);
@@ -573,8 +579,8 @@ function Alerts() {
                       text={selectedAlert.context}
                       keywords={
                         (selectedAlert.matched_keywords && selectedAlert.matched_keywords.length > 0)
-                          ? selectedAlert.matched_keywords.map(k => k.keyword)
-                          : [selectedAlert.keyword.keyword]
+                          ? selectedAlert.matched_keywords.map(k => k.matched_text || k.keyword)
+                          : [selectedAlert.matched_content || selectedAlert.keyword.keyword]
                       }
                     />
                   </Typography>

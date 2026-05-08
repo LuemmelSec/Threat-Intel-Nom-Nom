@@ -14,7 +14,7 @@ import CircularProgress from '@mui/material/CircularProgress';
 import Link from '@mui/material/Link';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, Cell } from 'recharts';
-import { statsApi, alertsApi, feedsApi } from '../api/client';
+import { statsApi, alertsApi, feedsApi, keywordsApi } from '../api/client';
 
 // Color scheme for criticality levels
 const CRITICALITY_COLORS = {
@@ -50,19 +50,25 @@ function Dashboard() {
 
       // Calculate alerts per keyword
       const allAlertsResponse = await alertsApi.getAll({ limit: 1000 });
+
+      // Build keyword ID -> name lookup from current keywords
+      const kwResponse = await keywordsApi.getAll();
+      const kwLookup = {};
+      kwResponse.data.forEach(k => { kwLookup[k.id] = k.name || k.keyword; });
+
       const keywordCounts = {};
 
       allAlertsResponse.data.forEach(alert => {
-        // matched_keywords is an array of {keyword, ...} objects
+        // matched_keywords is an array of {id, keyword, name?, ...} objects
         const keywords = alert.matched_keywords || [];
         if (keywords.length > 0) {
           keywords.forEach(kw => {
-            const name = kw.keyword || 'unknown';
+            const name = kwLookup[kw.id] || kw.name || kw.keyword || 'unknown';
             keywordCounts[name] = (keywordCounts[name] || 0) + 1;
           });
         } else {
-          // fallback to matched_content
-          const name = alert.matched_content || 'unknown';
+          // fallback: use keyword lookup by alert's keyword_id, then keyword object name, then matched_content
+          const name = kwLookup[alert.keyword?.id] || alert.keyword?.name || alert.keyword?.keyword || alert.matched_content || 'unknown';
           keywordCounts[name] = (keywordCounts[name] || 0) + 1;
         }
       });
@@ -254,8 +260,8 @@ function Dashboard() {
                   const articleLink = alert.api_metadata?.article_link;
                   const mkw = alert.matched_keywords;
                   const keywords = (mkw && mkw.length > 0)
-                    ? mkw.map(k => k.keyword)
-                    : [alert.keyword?.keyword || 'Unknown'];
+                    ? mkw.map(k => k.name || k.keyword)
+                    : [alert.keyword?.name || alert.keyword?.keyword || 'Unknown'];
                   return (
                   <React.Fragment key={alert.id}>
                     <ListItem

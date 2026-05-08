@@ -43,7 +43,7 @@ function App() {
       <Router>
         <Box sx={{ display: 'flex' }}>
           <Navigation />
-          <Box component="main" sx={{ flexGrow: 1, p: 3, mt: 8 }}>
+          <Box component="main" sx={{ flexGrow: 1, p: 3, mt: 8, overflowY: 'auto', scrollbarGutter: 'stable' }}>
             <Routes>
               <Route path="/" element={<Dashboard />} />
               <Route path="/feeds" element={<Feeds />} />
